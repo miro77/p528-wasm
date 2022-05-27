@@ -48,3 +48,5 @@ Thumbs.db
 libs/
 wasm/dist/
 node_modules/
+target/
+public/
