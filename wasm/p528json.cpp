@@ -39,6 +39,11 @@ extern "C" const char *calcP528(const char *requestJsonString) {
     /// <summary>
     /// Height of the low terminal, in user defined units
     /// </summary>
+    int nbr_of_points = request["nbr_of_points"];
+
+    /// <summary>
+    /// Height of the low terminal, in user defined units
+    /// </summary>
     double h_1__user_units = request["h_1__user_units"];
 
     /// <summary>
@@ -61,9 +66,24 @@ extern "C" const char *calcP528(const char *requestJsonString) {
     /// </summary>
     double f__mhz = request["f__mhz"];
 
+    /// <summary>
+    /// Distances, in user defined units
+    /// </summary>
     std::vector<double> d__user_units_vec;
+
+    /// <summary>
+    /// Basic transmission losses, in dB
+    /// </summary>
     std::vector<double> L_btl__db_vec;
+
+    /// <summary>
+    /// Free space basic transmission losses, in dB
+    /// </summary>
     std::vector<double> L_fs__db_vec;
+
+    /// <summary>
+    /// Modes of propagation
+    /// </summary>
     std::vector<int> PropModes_vec;
 
     bool _fullResolution = false;
@@ -73,7 +93,7 @@ extern "C" const char *calcP528(const char *requestJsonString) {
     /// <summary>
     /// Default number of steps in plot
     /// </summary>
-    int _steps = 50;
+    int _steps = nbr_of_points;
 
     // execute jobs
     // iterate on user-specified units (km or n miles)
@@ -101,7 +121,7 @@ extern "C" const char *calcP528(const char *requestJsonString) {
     sort(results.begin(), results.end(), sortbyfirst);
 
     for (auto &result : results) {
-      // d__user_units_vec.push_back(result.second.d__km);
+      d__user_units_vec.push_back(result.second.d__km);
       L_btl__db_vec.push_back(result.second.A__db);
       L_fs__db_vec.push_back(result.second.A_fs__db);
       PropModes_vec.push_back(result.second.propagation_mode);

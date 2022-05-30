@@ -52,7 +52,7 @@ if(USE_DEBUG)
       -s ENVIRONMENT=worker,web,node \
       -s USE_PTHREADS=1 \
       -s EXIT_RUNTIME=1 \
-      -s PTHREAD_POOL_SIZE=\"_emscripten_num_logical_cores() + 3\" \
+      -s PTHREAD_POOL_SIZE=\"_emscripten_num_logical_cores()\" \
       -s INITIAL_MEMORY=100mb \
        -s EXPORTED_RUNTIME_METHODS='[ccall]'"
   )
@@ -66,7 +66,7 @@ else()
       -s ENVIRONMENT=worker,web,node \
       -s USE_PTHREADS=1 \
       -s EXIT_RUNTIME=1 \
-      -s PTHREAD_POOL_SIZE=\"_emscripten_num_logical_cores() + 3\" \
+      -s PTHREAD_POOL_SIZE=\"_emscripten_num_logical_cores()\" \
       -s INITIAL_MEMORY=100mb \
        -s EXPORTED_RUNTIME_METHODS='[ccall]'"
   )
