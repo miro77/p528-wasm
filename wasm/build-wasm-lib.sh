@@ -15,8 +15,8 @@ else
     buildfolder=build_release_lib
 fi
 
-em_image=emscripten/emsdk:3.1.11
-em_name=emscripten_3_1_11_lib
+em_image=emscripten/emsdk:3.1.23
+em_name=emscripten_3_1_23_lib
 # em_image=emscripten/emsdk:2.0.0
 # em_name=emscripten_2_0_0_lib
 
