@@ -2,7 +2,6 @@
 #ifndef ITS_ITU_PSERIES_P835_H
 #define ITS_ITU_PSERIES_P835_H
 
-#define DLLEXPORT extern "C" __declspec(dllexport)
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
