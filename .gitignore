@@ -44,3 +44,4 @@ Thumbs.db
 **/obj
 **/x64
 **/x86
+cmake_build/
