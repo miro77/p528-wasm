@@ -45,3 +45,4 @@ Thumbs.db
 **/x64
 **/x86
 cmake_build/
+win32/packages/
