@@ -44,6 +44,7 @@ include(GNUInstallDirs)
 
 # By Default, build shared libaray
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build using shared libraries" FORCE)
+set(RUN_TESTS ON CACHE BOOL "Run C++ unit tests with Google Test" FORCE)
 set(ENABLE_INSTALL ON CACHE BOOL "Enable installation of (${LIB_NAME}. (Projects embedding (${LIB_NAME} may want to turn this OFF.)" FORCE)
 
 get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
@@ -52,6 +53,19 @@ message(STATUS "STATUS: ${PROJECT_NAME} PARENT_DIR is " ${PARENT_DIR})
 
 # add the library
 add_subdirectory(${LIB_NAME})
+
+if (RUN_TESTS)         # Build and run unit tests
+    set(GOOGLETEST_DIR "${PARENT_DIR}/test/lib/googletest")
+    if (EXISTS "${GOOGLETEST_DIR}/CMakeLists.txt")
+        enable_testing()
+        add_subdirectory(test)
+    else ()
+        message(SEND_ERROR
+            "ERROR: Unable to build tests. GoogleTest submodule is missing. "
+            "Run `git submodule init && git submodule update` and try again."
+        )
+    endif()
+endif ()
 
 message(STATUS "STATUS: ${PROJECT_NAME} VERSION_MAJOR is " ${${PROJECT_NAME}_VERSION_MAJOR})
 message(STATUS "STATUS: ${PROJECT_NAME} VERSION_MINOR is " ${${PROJECT_NAME}_VERSION_MINOR})
