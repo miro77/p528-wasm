@@ -25,7 +25,7 @@ TEST_F(TestP528, TestP528Success) {
         EXPECT_EQ(rtn, data.expectedReturn);
         EXPECT_EQ(result.propagation_mode, data.expectedResult.propagation_mode);
         EXPECT_EQ(result.warnings, data.expectedResult.warnings);
-        EXPECT_NEAR(result.d__km, data.expectedResult.d__km, TOLERANCE);
+        EXPECT_NEAR(result.d__km, data.expectedResult.d__km, 1.0e-3);
         EXPECT_NEAR(result.A__db, data.expectedResult.A__db, TOLERANCE);
         EXPECT_NEAR(result.A_fs__db, data.expectedResult.A_fs__db, TOLERANCE);
         EXPECT_NEAR(result.A_a__db, data.expectedResult.A_a__db, TOLERANCE);
