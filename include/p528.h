@@ -7,7 +7,12 @@
 
 using namespace std;
 
-#define DLLEXPORT extern "C" __declspec(dllexport)
+#ifdef _WIN32   // windows
+#   define DLLEXPORT extern "C" __declspec(dllexport)
+#else           // non windows
+#   define DLLEXPORT extern "C"
+#endif
+
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
