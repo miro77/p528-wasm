@@ -33,7 +33,7 @@
                 "strategy": "external"
             },
             "cacheVariables": {
-                "RUN_TESTS": "OFF",
+                "RUN_TESTS": "ON",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "BUILD_32BIT": "OFF"
             }
@@ -56,7 +56,7 @@
                 "strategy": "external"
             },
             "cacheVariables": {
-                "RUN_TESTS": "OFF",
+                "RUN_TESTS": "ON",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "BUILD_32BIT": "ON"
             }
