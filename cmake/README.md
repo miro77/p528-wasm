@@ -27,7 +27,7 @@ cmake --build .
 cmake --install . --config Debug --prefix ../p528install
 ```
 
-### Cross Platform Buiding with Preset ###
+### Cross Platform Building with Preset ###
 
 CMake also supports preset building. The configuration is set in CMake Presets.json. The configurations can be changed based on your preference. The following is an example to build the project in windows x64 debug mode.
 

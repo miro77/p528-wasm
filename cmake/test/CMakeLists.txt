@@ -20,6 +20,7 @@ set(TEST_FILES
     ${TEST_SOURCE}P528GTest.h
     ${TEST_SOURCE}P528GTestUtils.cpp
     ${TEST_SOURCE}TestP528.cpp
+    ${TEST_SOURCE}TestP528DataTables.cpp
 )
 
 include_directories(${INCLUDE_DIR})

@@ -17,6 +17,14 @@ struct InputsAndResult {
     Result expectedResult;
 };
 
-std::vector<InputsAndResult> ReadP528InputsAndResultTestData(const std::string& filename);
+std::vector<InputsAndResult> ReadP528InputsAndResultFromPoints(const std::string& filename);
+
+std::vector<std::string> GetDataTablesFileList();
+
+std::vector<InputsAndResult> ReadP528InputsAndResultFromDataTable(const std::string& filename, int testStep);
+
+std::vector<std::string> readCSVRow(const std::string& row);
+
+std::vector<std::vector<std::string>> readCSV(std::istream& in);
 
 #endif
