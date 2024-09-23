@@ -45,8 +45,6 @@ std::vector<std::string> GetDataTablesFileList()
     std::vector<std::string> ret;
     std::string dataTableDir = GetDirectory("Data Tables");
     for (const auto& entry : std::filesystem::directory_iterator(dataTableDir)) {
-        //std::cout << entry.path() << std::endl;
-        //std::string filename = entry.path().filename();
         ret.push_back(entry.path().filename().string());
     }
     return ret;
@@ -65,7 +63,6 @@ std::vector<InputsAndResult> ReadP528InputsAndResultFromDataTable(const std::str
     int T_pol = 0;
     double p;
 
-    //std::vector<double> A__db;
     double A_fs__db;
 
     std::vector<std::vector<std::string>> csvRows = readCSV(file);
@@ -76,7 +73,6 @@ std::vector<InputsAndResult> ReadP528InputsAndResultFromDataTable(const std::str
     std::vector<std::string> cells;
    
     if (csvRows[0].size() > 0) {
-        //std::cout << csvRows[0][0] << std::endl;
         string strCell = csvRows[0][0];
         strCell.resize(strCell.find("M"));
         f__mhz = std::stod(strCell);
@@ -85,21 +81,19 @@ std::vector<InputsAndResult> ReadP528InputsAndResultFromDataTable(const std::str
         strCell = strCell.substr(strCell.find("(") + 1);
         p = std::stod(strCell) * 100.0;
     }
-    if (csvRows[1].size() > 2) {
-        //std::cout << csvRows[1][2] << std::endl;
-        for (int i = 2; i < csvRows[1].size(); i++) {
+    typedef std::vector<std::vector<std::string> >::size_type vec_size_t;
+    if (csvRows[1].size() > 2) {        
+        for (vec_size_t i = 2; i < csvRows[1].size(); i++) {
             h_2__meter.push_back(std::stod(csvRows[1][i]));
         }
     }
     if (csvRows[2].size() > 2) {
-        //std::cout << csvRows[2][2] << std::endl;
-        for (int i = 2; i < csvRows[2].size(); i++) {
+        for (vec_size_t i = 2; i < csvRows[2].size(); i++) {
             h_1__meter.push_back(std::stod(csvRows[2][i]));
         }
     }
     
-    for (int r = 4; r < csvRows.size(); r += testStep) {
-        //std::cout << csvRows[r][0] << std::endl;
+    for (vec_size_t r = 4; r < csvRows.size(); r += testStep) {
         if (csvRows[r].size() > 2) {
             d__km = std::stod(csvRows[r][0]);
             A_fs__db = std::stod(csvRows[r][1]);
@@ -116,7 +110,7 @@ std::vector<InputsAndResult> ReadP528InputsAndResultFromDataTable(const std::str
                     d.expectedResult.A_fs__db = A_fs__db;
                 }
                 else {
-                    d.expectedResult.A_fs__db = NULL;
+                    d.expectedResult.A_fs__db = NAN;
                 }
                 d.expectedResult.A__db = std::stod(csvRows[r][i]);
                 testData.push_back(d);

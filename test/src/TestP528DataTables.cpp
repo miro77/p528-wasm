@@ -3,6 +3,16 @@
 #include <string>
 #include <functional>
 
+
+/*=============================================================================
+ |
+ |  Description:  The purpose of this is to ensure that CMAKE compiles 
+ |                the P.528 model DLL correctly.
+ |                Data Table files are from Recommendation ITU-R P.528-5
+ |                publication website:
+ |                https://www.itu.int/rec/R-REC-P.528-5-202109-I/en
+ |
+ *===========================================================================*/
 class TestP528DataTables : public ::testing::TestWithParam<std::string>
 {
 public:
@@ -31,7 +41,8 @@ TEST_P(TestP528DataTables, TestDataTable) {
     for (const auto& data : testData) {
         Result result;
         int rtn = P528(data.d__km, data.h_1__meter, data.h_2__meter, data.f__mhz, data.T_pol, data.p, &result);
-        if (data.expectedResult.A_fs__db != NULL) {
+        EXPECT_EQ(0, rtn);
+        if (!isnan(data.expectedResult.A_fs__db)) {
             EXPECT_NEAR(result.A_fs__db, data.expectedResult.A_fs__db, TOLERANCE);
         }
         EXPECT_NEAR(result.A__db, data.expectedResult.A__db, TOLERANCE);
