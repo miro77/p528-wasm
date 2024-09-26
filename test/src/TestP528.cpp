@@ -1,5 +1,13 @@
 #include "P528GTest.h"
 
+
+/*=============================================================================
+ |
+ |  Description:  The purpose of this is to ensure that CMAKE compiles
+ |                the P.528 model DLL correctly.
+ |                Test Data is stored in CSV format.
+ |
+ *===========================================================================*/
 class TestP528 : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -13,7 +21,11 @@ protected:
     double TOLERANCE = 1.0e-10;
 };
 
-// Test case to verify P528 Success
+/*=============================================================================
+ |
+ |  Description:  Test case to verify P528 results are correct
+ |
+ *===========================================================================*/
 TEST_F(TestP528, TestP528Success) {
     // Ensure test data was loaded
     EXPECT_NE(static_cast<int>(testData.size()), 0);

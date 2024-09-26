@@ -8,7 +8,8 @@
  |
  |  Description:  The purpose of this is to ensure that CMAKE compiles 
  |                the P.528 model DLL correctly.
- |                Data Table files are from Recommendation ITU-R P.528-5
+ |                Test Data is stored in Data Table format.
+ |                Data Table test files are from Recommendation ITU-R P.528-5
  |                publication website:
  |                https://www.itu.int/rec/R-REC-P.528-5-202109-I/en
  |
@@ -33,6 +34,11 @@ public:
     int testStep = 100;
 };
 
+/*=============================================================================
+ |
+ |  Description:  Test case to verify P528 results are correct
+ |
+ *===========================================================================*/
 TEST_P(TestP528DataTables, TestDataTable) {
     std::string fileName = GetParam();
     std::vector<InputsAndResult> testData = ReadP528InputsAndResultFromDataTable(fileName, testStep);
@@ -49,6 +55,8 @@ TEST_P(TestP528DataTables, TestDataTable) {
     }
 }
 
+// Note: Microsoft.googletest doesn't have INSTANTIATE_TEST_SUITE_P
+// Refer to: https://github.com/microsoft/react-native-windows/issues/9791
 INSTANTIATE_TEST_CASE_P(
     TestP528, 
     TestP528DataTables, 
