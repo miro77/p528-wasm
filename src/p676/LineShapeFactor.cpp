@@ -1,11 +1,13 @@
 #include "p676.h"
 
+#include <math.h>
+
 /*=============================================================================
  |
  |  Description:  Line-shape factor.  See Equation (5).
  |
  |        Input:  f__ghz        - Frequency, in GHz
- |                f_i__ghz      - Line center frequency, in GHz 
+ |                f_i__ghz      - Line center frequency, in GHz
  |                delta_f__ghz  - From Equation 6
  |                delta         - From Equation 7
  |

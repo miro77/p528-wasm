@@ -1,5 +1,7 @@
 #include "p676.h"
 
+#include <math.h>
+
 /*=============================================================================
  |
  |  Description:  Non-resonant Debye component of frequency-dependent complex

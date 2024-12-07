@@ -1,6 +1,8 @@
 #include "p676.h"
 #include "p835.h"
 
+#include <math.h>
+
 /*=============================================================================
  |
  |  Description:  This file computes Step 6 in Annex 2, Section 3 of

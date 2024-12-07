@@ -1,6 +1,8 @@
 #include "p676.h"
 #include "p835.h"
 
+#include <math.h>
+
 /*=============================================================================
  |
  |  Description:  Thickness of the ith layer.
@@ -37,7 +39,7 @@ double LayerThickness(double m, int i)
  |
  *===========================================================================*/
 void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
-    RayTraceConfig config, SlantPathAttenuationResult* result)
+              RayTraceConfig config, SlantPathAttenuationResult *result)
 {
     // Equations 16(a)-(c)
     int i_lower = floor(100 * log(1e4 * h_1__km * (exp(1. / 100.) - 1) + 1) + 1);
@@ -98,7 +100,7 @@ void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
 
         result->a__km += a_i__km;
         result->A_gas__db += a_i__km * gamma_i;
-        result->delta_L__km += a_i__km * (n_i - 1);     // summation, Equation 23
+        result->delta_L__km += a_i__km * (n_i - 1); // summation, Equation 23
 
         beta_ii__rad = asin(n_i / n_ii * sin(alpha_i__rad));
 
@@ -132,7 +134,7 @@ void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
  |
  *===========================================================================*/
 void GetLayerProperties(double f__ghz, double h_i__km, RayTraceConfig config,
-    double* n, double* gamma)
+                        double *n, double *gamma)
 {
     // use function pointers to get atmospheric parameters
     double T__kelvin = config.temperature(h_i__km);

@@ -1,5 +1,7 @@
 #include "p676.h"
 
+#include <math.h>
+
 /*=============================================================================
  |
  |  Description:  Imaginary part of the frequency-dependent complex
@@ -25,7 +27,7 @@ double OxygenRefractivity(double f__ghz, double T__kelvin, double e__hPa, double
         double S_i = OxygenData::a_1[i] * 1e-7 * p__hPa * pow(theta, 3) * exp(OxygenData::a_2[i] * (1 - theta));
 
         // compute the width of the line, Equation 6a, for oxygen
-        double delta_f__ghz = OxygenData::a_3[i] * 1e-4 * (p__hPa * pow(theta, (0.8 - OxygenData::a_4[i])) + 1.1  * e__hPa * theta);
+        double delta_f__ghz = OxygenData::a_3[i] * 1e-4 * (p__hPa * pow(theta, (0.8 - OxygenData::a_4[i])) + 1.1 * e__hPa * theta);
 
         // modify the line width to account for Zeeman splitting of the oxygen lines
         // Equation 6b, for oxygen
