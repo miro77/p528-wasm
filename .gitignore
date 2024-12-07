@@ -46,3 +46,4 @@ Thumbs.db
 **/x86
 cmake_build/
 win32/packages/
+p528install/
