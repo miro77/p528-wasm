@@ -62,7 +62,7 @@ double OxygenSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa,
 double WaterVapourSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa)
 {
     // partial Eqn 1
-    double N_w = WaterVapourRefractivity(f__ghz, T__kelvin, e__hPa, p__hPa);
+    double N_w = WaterVapourRefractivitySimd(f__ghz, T__kelvin, e__hPa, p__hPa);
     double gamma_w = 0.1820 * f__ghz * N_w;
 
     return gamma_w;

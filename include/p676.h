@@ -74,6 +74,7 @@ double SpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, doubl
 double OxygenRefractivity(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double OxygenRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double WaterVapourRefractivity(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
+double WaterVapourRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double OxygenSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double P__hPa);
 double WaterVapourSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double WaterVapourDensityToPartialPressure(double rho__g_m3, double T__kelvin);
