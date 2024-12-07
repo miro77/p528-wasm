@@ -2,6 +2,11 @@
 
 #include <math.h>
 
+#include <experimental/simd>
+namespace stdx = std::experimental;
+
+using doublev = stdx::native_simd<double>;
+
 /*=============================================================================
  |
  |  Description:  Line-shape factor.  See Equation (5).
@@ -21,6 +26,17 @@ double LineShapeFactor(double f__ghz, double f_i__ghz, double delta_f__ghz, doub
     double term3 = (delta_f__ghz - delta * (f_i__ghz + f__ghz)) / (pow(f_i__ghz + f__ghz, 2) + pow(delta_f__ghz, 2));
 
     double F_i = term1 * (term2 + term3);
+
+    return F_i;
+}
+
+doublev LineShapeFactorSimd(double f__ghz, doublev f_i__ghz, doublev delta_f__ghz, doublev delta)
+{
+    doublev term1 = f__ghz / f_i__ghz;
+    doublev term2 = (delta_f__ghz - delta * (f_i__ghz - f__ghz)) / (pow(f_i__ghz - f__ghz, 2) + pow(delta_f__ghz, 2));
+    doublev term3 = (delta_f__ghz - delta * (f_i__ghz + f__ghz)) / (pow(f_i__ghz + f__ghz, 2) + pow(delta_f__ghz, 2));
+
+    doublev F_i = term1 * (term2 + term3);
 
     return F_i;
 }

@@ -2,6 +2,11 @@
 
 #include <math.h>
 
+#include <experimental/simd>
+namespace stdx = std::experimental;
+
+using doublev = stdx::native_simd<double>;
+
 /*=============================================================================
  |
  |  Description:  Imaginary part of the frequency-dependent complex
@@ -41,6 +46,49 @@ double OxygenRefractivity(double f__ghz, double T__kelvin, double e__hPa, double
 
         // summation of terms...from Equation 2a, for oxygen
         N += S_i * F_i;
+    }
+
+    double N_D = NonresonantDebyeAttenuation(f__ghz, e__hPa, p__hPa, theta);
+
+    double N_o = N + N_D;
+
+    return N_o;
+}
+
+double OxygenRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, double p__hPa)
+{
+    double theta = 300 / T__kelvin;
+
+    double N = 0;
+
+    std::size_t i = 0;
+    for (; i + doublev::size() <= OxygenData::f_0.size(); i += doublev::size())
+    {
+        // Equation 3, for oxygen
+        const doublev a_1_simd = doublev(&OxygenData::a_1[i], stdx::element_aligned);
+        const doublev a_2_simd = doublev(&OxygenData::a_2[i], stdx::element_aligned);
+        doublev S_i = a_1_simd * 1e-7 * p__hPa * pow(theta, 3) * exp(a_2_simd * (1 - theta));
+
+        // compute the width of the line, Equation 6a, for oxygen
+        const doublev a_3_simd = doublev(&OxygenData::a_3[i], stdx::element_aligned);
+        const doublev a_4_simd = doublev(&OxygenData::a_4[i], stdx::element_aligned);
+        doublev delta_f__ghz = a_3_simd * 1e-4 * (p__hPa * pow(theta, (0.8 - a_4_simd)) + 1.1 * e__hPa * theta);
+
+        // modify the line width to account for Zeeman splitting of the oxygen lines
+        // Equation 6b, for oxygen
+        delta_f__ghz = sqrt(pow(delta_f__ghz, 2) + 2.25e-6);
+
+        // correction factor due to interference effects in oxygen lines
+        // Equation 7, for oxygen
+        const doublev a_5_simd = doublev(&OxygenData::a_5[i], stdx::element_aligned);
+        const doublev a_6_simd = doublev(&OxygenData::a_6[i], stdx::element_aligned);
+        doublev delta = (a_5_simd + a_6_simd * theta) * 1e-4 * (p__hPa + e__hPa) * pow(theta, 0.8);
+
+        const doublev f_0_simd = doublev(&OxygenData::f_0[i], stdx::element_aligned);
+        doublev F_i = LineShapeFactorSimd(f__ghz, f_0_simd, delta_f__ghz, delta);
+
+        // summation of terms...from Equation 2a, for oxygen
+        N += stdx::reduce(S_i * F_i, std::plus{});
     }
 
     double N_D = NonresonantDebyeAttenuation(f__ghz, e__hPa, p__hPa, theta);

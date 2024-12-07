@@ -5,26 +5,31 @@
 #include <vector>
 #include <algorithm>
 
+#include <experimental/simd>
+namespace stdx = std::experimental;
+
+using doublev = stdx::native_simd<double>;
+
 using namespace std;
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#define PI                                  3.1415926535897932384
-#define a_0__km                             6371.0
+#define PI 3.1415926535897932384
+#define a_0__km 6371.0
 
 // Function pointers
-using Temperature = double(*)(double);
-using DryPressure = double(*)(double);
-using WetPressure = double(*)(double);
+using Temperature = double (*)(double);
+using DryPressure = double (*)(double);
+using WetPressure = double (*)(double);
 
 struct SlantPathAttenuationResult
 {
-    double A_gas__db;                       // Median gaseous absorption, in dB
-    double bending__rad;                    // Bending angle, in rad
-    double a__km;                           // Ray length, in km
-    double angle__rad;                      // Incident angle, in rad
-    double delta_L__km;                     // Excess atmospheric path length, in km
+    double A_gas__db;    // Median gaseous absorption, in dB
+    double bending__rad; // Bending angle, in rad
+    double a__km;        // Ray length, in km
+    double angle__rad;   // Incident angle, in rad
+    double delta_L__km;  // Excess atmospheric path length, in km
 };
 
 struct RayTraceConfig
@@ -49,7 +54,7 @@ public:
 class WaterVapourData
 {
 public:
-    const static vector<double> f_0; 
+    const static vector<double> f_0;
     const static vector<double> b_1;
     const static vector<double> b_2;
     const static vector<double> b_3;
@@ -59,23 +64,25 @@ public:
 };
 
 double LineShapeFactor(double f__ghz, double f_i__ghz, double delta_f__ghz, double delta);
+doublev LineShapeFactorSimd(double f__ghz, doublev f_i__ghz, doublev delta_f__ghz, doublev delta);
 double NonresonantDebyeAttenuation(double f__ghz, double e__hPa, double p__hPa, double theta);
 double RefractiveIndex(double p__hPa, double T__kelvin, double e__hPa);
 void GetLayerProperties(double f__ghz, double h_i__km, RayTraceConfig config,
-    double* n, double* gamma);
+                        double *n, double *gamma);
 
 double SpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double OxygenRefractivity(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
+double OxygenRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double WaterVapourRefractivity(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double OxygenSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double P__hPa);
 double WaterVapourSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double WaterVapourDensityToPartialPressure(double rho__g_m3, double T__kelvin);
 
 void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
-    RayTraceConfig config, SlantPathAttenuationResult* result);
+              RayTraceConfig config, SlantPathAttenuationResult *result);
 
 int SlantPathAttenuation(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
-    SlantPathAttenuationResult* result);
+                         SlantPathAttenuationResult *result);
 
 double GlobalWetPressure(double h__km);
 #endif
