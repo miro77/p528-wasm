@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug p528GTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/cmake_build/p528GTest", // Pfad zur ausführbaren Datei
+            "args": [], // Test-spezifische Argumente, falls erforderlich
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}", // Arbeitsverzeichnis
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb", // Alternativ "lldb" oder "cppvsdbg" für Windows
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb", // Pfad zum Debugger, ggf. anpassen
+        }
+    ]
+}
