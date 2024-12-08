@@ -9,6 +9,7 @@
 namespace stdx = std::experimental;
 
 using doublev = stdx::native_simd<double>;
+using intv = stdx::native_simd<int>;
 
 using namespace std;
 
