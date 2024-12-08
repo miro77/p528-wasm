@@ -67,7 +67,7 @@ double OxygenRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, do
         // Equation 3, for oxygen
         const doublev a_1_simd = doublev(&OxygenData::a_1[i], stdx::element_aligned);
         const doublev a_2_simd = doublev(&OxygenData::a_2[i], stdx::element_aligned);
-        doublev S_i = a_1_simd * 1e-7 * p__hPa * pow(theta, 3) * exp(a_2_simd * (1 - theta));
+        const doublev S_i = a_1_simd * 1e-7 * p__hPa * pow(theta, 3) * exp(a_2_simd * (1 - theta));
 
         // compute the width of the line, Equation 6a, for oxygen
         const doublev a_3_simd = doublev(&OxygenData::a_3[i], stdx::element_aligned);
@@ -82,10 +82,10 @@ double OxygenRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, do
         // Equation 7, for oxygen
         const doublev a_5_simd = doublev(&OxygenData::a_5[i], stdx::element_aligned);
         const doublev a_6_simd = doublev(&OxygenData::a_6[i], stdx::element_aligned);
-        doublev delta = (a_5_simd + a_6_simd * theta) * 1e-4 * (p__hPa + e__hPa) * pow(theta, 0.8);
+        const doublev delta = (a_5_simd + a_6_simd * theta) * 1e-4 * (p__hPa + e__hPa) * pow(theta, 0.8);
 
         const doublev f_0_simd = doublev(&OxygenData::f_0[i], stdx::element_aligned);
-        doublev F_i = LineShapeFactorSimd(f__ghz, f_0_simd, delta_f__ghz, delta);
+        const doublev F_i = LineShapeFactorSimd(f__ghz, f_0_simd, delta_f__ghz, delta);
 
         // summation of terms...from Equation 2a, for oxygen
         N += stdx::reduce(S_i * F_i, std::plus{});

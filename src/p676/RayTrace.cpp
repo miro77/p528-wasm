@@ -86,12 +86,34 @@ void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
     delta_ii__km_vector.reserve(loop_size);
     h_ii__km_vector.reserve(loop_size);
 
+    std::vector<int> loop_index_vector(loop_size);
+    std::iota(loop_index_vector.begin(), loop_index_vector.end(), i_lower);
+
     // summation from Equation 13
-    for (int i = i_lower; i <= i_upper - 1; i++)
+    int vector_index{0};
+    std::size_t i_simd = i_lower;
+    for (; i_simd + doublev::size() <= i_upper; i_simd += doublev::size())
     {
-        double delta_ii__km = LayerThickness(m, i + 1);
+        const doublev loop_index_simd = doublev(&loop_index_vector[vector_index + 1], stdx::element_aligned);
+
+        doublev delta_ii__km = LayerThicknessSimd(m, loop_index_simd);
+        for (size_t i = 0; i < doublev::size(); i++)
+        {
+            delta_ii__km_vector.push_back(delta_ii__km[i]);
+        }
+
+        doublev h_ii__km = h_1__km + m * ((exp((loop_index_simd - 1) / 100.) - exp((i_lower - 1) / 100.)) / (exp(1 / 100.) - 1));
+        for (size_t i = 0; i < doublev::size(); i++)
+        {
+            h_ii__km_vector.push_back(h_ii__km[i]);
+        }
+        vector_index += doublev::size();
+    }
+    for (; i_simd <= i_upper - 1; i_simd++)
+    {
+        double delta_ii__km = LayerThickness(m, i_simd + 1);
         delta_ii__km_vector.push_back(delta_ii__km);
-        double h_ii__km = h_1__km + m * ((exp((i + 1 - 1) / 100.) - exp((i_lower - 1) / 100.)) / (exp(1 / 100.) - 1));
+        double h_ii__km = h_1__km + m * ((exp((i_simd + 1 - 1) / 100.) - exp((i_lower - 1) / 100.)) / (exp(1 / 100.) - 1));
         h_ii__km_vector.push_back(h_ii__km);
     }
 
@@ -99,7 +121,7 @@ void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
     std::vector<double> gamma_ii_vector{gamma_i};
     n_ii_vector.reserve(loop_size);
     gamma_ii_vector.reserve(loop_size);
-    int vector_index{0};
+    vector_index = 0;
     for (int i = i_lower; i <= i_upper - 1; i++)
     {
 
@@ -110,11 +132,8 @@ void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
         ++vector_index;
     }
 
-    std::vector<int> loop_index_vector(loop_size);
-    std::iota(loop_index_vector.begin(), loop_index_vector.end(), i_lower);
-
     vector_index = 0;
-    std::size_t i_simd = i_lower;
+    i_simd = i_lower;
     for (; i_simd + doublev::size() <= i_upper; i_simd += doublev::size())
     {
         const doublev h_i__km_simd = doublev(&h_ii__km_vector[vector_index], stdx::element_aligned);
