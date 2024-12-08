@@ -142,9 +142,7 @@ void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
         const doublev h_ii__km_simd = doublev(&h_ii__km_vector[vector_index + 1], stdx::element_aligned);
         doublev r_ii__km = a_0__km + h_ii__km_simd;
 
-        const doublev loop_index_simd = doublev(&loop_index_vector[vector_index], stdx::element_aligned);
-
-        doublev delta_i__km = LayerThicknessSimd(m, loop_index_simd);
+        doublev delta_i__km = doublev(&delta_ii__km_vector[vector_index], stdx::element_aligned);
 
         const doublev n_i_simd = doublev(&n_ii_vector[vector_index], stdx::element_aligned);
         const doublev n_ii_simd = doublev(&n_ii_vector[vector_index + 1], stdx::element_aligned);
