@@ -5,6 +5,8 @@
 #include "../src/p528/ProfileContext.h"
 
 #include <cmath>
+#include <map>
+#include <tuple>
 #include <vector>
 
 using namespace ITS::ITU::PSeries::p528;
@@ -194,6 +196,60 @@ TEST_F(TestP528Profile, ParallelMatchesSerial) {
     EXPECT_EQ(P528_ProfileParallel(nullptr, 0, 10, 1000, 1200, POLARIZATION__HORIZONTAL, 50,
         nullptr, nullptr, 4), SUCCESS);
 }
+
+/*=============================================================================
+ |
+ |  Description:  P528_Profile() against the data tables of Recommendation
+ |                ITU-R P.528-5. Each column of a table is a profile: the
+ |                loss versus distance for one pair of terminal heights.
+ |                Unlike the tests of P528(), which sample the tables, these
+ |                compare every value.
+ |
+ *===========================================================================*/
+class TestP528ProfileDataTables : public ::testing::TestWithParam<std::string> {
+protected:
+    // the tables are rounded to 0.1 dB
+    double TOLERANCE = 1.0e-1;
+};
+
+TEST_P(TestP528ProfileDataTables, EveryColumnIsAProfile) {
+    std::vector<InputsAndResult> table = ReadP528InputsAndResultFromDataTable(GetParam(), 1);
+    ASSERT_NE(table.size(), 0u);
+
+    // collect the columns: rows of equal heights, in the order of the table
+    typedef std::tuple<double, double, double, int, double> Column;
+    std::map<Column, std::vector<size_t>> columns;
+    for (size_t i = 0; i < table.size(); i++)
+        columns[Column(table[i].h_1__meter, table[i].h_2__meter, table[i].f__mhz,
+            table[i].T_pol, table[i].p)].push_back(i);
+
+    for (const auto& column : columns) {
+        const std::vector<size_t>& rows = column.second;
+        const InputsAndResult& inputs = table[rows[0]];
+        std::vector<double> d(rows.size());
+        for (size_t k = 0; k < rows.size(); k++)
+            d[k] = table[rows[k]].d__km;
+
+        std::vector<Result> results(d.size());
+        std::vector<int> return_codes(d.size());
+        EXPECT_EQ(P528_Profile(d.data(), static_cast<int>(d.size()), inputs.h_1__meter,
+            inputs.h_2__meter, inputs.f__mhz, inputs.T_pol, inputs.p, results.data(),
+            return_codes.data()), SUCCESS);
+
+        for (size_t k = 0; k < rows.size(); k++) {
+            SCOPED_TRACE(testing::Message() << "h_1__meter=" << inputs.h_1__meter << ", h_2__meter="
+                << inputs.h_2__meter << ", f__mhz=" << inputs.f__mhz << ", p=" << inputs.p
+                << ", d__km=" << d[k]);
+            EXPECT_EQ(return_codes[k], SUCCESS);
+            EXPECT_NEAR(results[k].A__db, table[rows[k]].expectedResult.A__db, TOLERANCE);
+            if (!std::isnan(table[rows[k]].expectedResult.A_fs__db))
+                EXPECT_NEAR(results[k].A_fs__db, table[rows[k]].expectedResult.A_fs__db, TOLERANCE);
+        }
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(TestP528, TestP528ProfileDataTables,
+    ::testing::ValuesIn(GetDataTablesFileList()));
 
 /*=============================================================================
  |
