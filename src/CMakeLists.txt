@@ -28,6 +28,7 @@ set(LIB_FILES
     "${LIB_HEADERS}/p528.h"
     #p676
     "p676/GlobalWetPressure.cpp"
+    "p676/LayerRayTable.cpp"
     "p676/LineShapeFactor.cpp"
     "p676/NonresonantDebyeAttenuation.cpp"
     "p676/OxygenData.cpp"

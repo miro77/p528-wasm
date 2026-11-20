@@ -211,6 +211,13 @@ void PrintStageBreakdown(const Scenario& s, int repeat) {
     RayTrace(t1.h_r__km, PI / 2 - 0.001 - 0.2 * i / fast_repeat, layers,
              &slant);
   });
+  LayerRayTable layer_rays(t1.h_r__km, &layers);
+  time_fast("LOS: ray through shared layers (ray table)", [&](int i) {
+    // the first lookups are declined, until the table pays off
+    double beta_1__rad = PI / 2 - 0.001 - 0.2 * i / fast_repeat;
+    if (!layer_rays.Lookup(beta_1__rad, &slant.A_gas__db, &slant.a__km))
+      RayTraceLoss(t1.h_r__km, beta_1__rad, layers, &slant);
+  });
   time_fast("LOS: grazing ray (table)", [&](int i) {
     SlantPathAttenuation(s.f__mhz / 1000, t1.h_r__km, t2.h_r__km,
                          PI / 2 + 1e-4 * (1 + i % 7), &slant, &table);

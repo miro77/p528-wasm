@@ -212,8 +212,8 @@ static void InitializeTranshorizon(ProfileContext* context) {
   LineOfSightPoint(path, terminal_1, terminal_2, &context->K_LOS_params,
                    context->f__mhz, -context->A_dML__db, context->p,
                    path->d_ML__km - 1, context->T_pol, context->psi_limit,
-                   context->A_d_0__db, &context->los_layers, nullptr,
-                   &result_K_LOS, &context->K_LOS);
+                   context->A_d_0__db, &context->los, nullptr, &result_K_LOS,
+                   &context->K_LOS);
 
   // Step 6.  Search past horizon to find crossover point between Diffraction
   // and Troposcatter models
@@ -254,9 +254,8 @@ void EvaluateProfilePoint(ProfileContext* context, double d__km,
     result->propagation_mode = PROP_MODE__LOS;
     LineOfSightPoint(path, terminal_1, terminal_2, los_params, f__mhz,
                      -context->A_dML__db, p, d__km, context->T_pol,
-                     context->psi_limit, context->A_d_0__db,
-                     &context->los_layers, context->gamma_table.get(), result,
-                     &K_LOS);
+                     context->psi_limit, context->A_d_0__db, &context->los,
+                     context->gamma_table.get(), result, &K_LOS);
     return;
   } else {
     // K_LOS and the crossover search are the same for every distance

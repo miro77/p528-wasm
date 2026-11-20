@@ -15,6 +15,17 @@ namespace PSeries {
 namespace p528 {
 
 /**
+ * State of the line-of-sight region that all distances share. It is filled on
+ * first use.
+ */
+struct LineOfSightShared {
+  /** Atmospheric layers between the two terminals */
+  RayTraceLayers layers;
+  /** Rays through the layers versus their elevation angle (profiles only) */
+  std::unique_ptr<LayerRayTable> rays;
+};
+
+/**
  * Distance-independent state of a P.528 calculation, valid for one combination
  * of terminal heights, frequency, polarization and time percentage.
  *
@@ -42,8 +53,8 @@ struct ProfileContext {
   ///@{
   double psi_limit;  ///< Reflection angle separating free space and two-ray
   double A_d_0__db;  ///< Line-of-sight loss at d_0
-  /** Atmospheric layers between the two terminals, filled on first use */
-  RayTraceLayers los_layers;
+  /** Layers and rays between the two terminals, filled on first use */
+  LineOfSightShared los;
   ///@}
 
   /**
@@ -89,7 +100,7 @@ void LineOfSightPoint(Path* path, Terminal* terminal_1, Terminal* terminal_2,
                       LineOfSightParams* los_params, double f__mhz,
                       double A_dML__db, double p, double d__km, int T_pol,
                       double psi_limit, double A_d_0__db,
-                      RayTraceLayers* los_layers,
+                      LineOfSightShared* shared,
                       SpecificAttenuationTable* gamma_table, Result* result,
                       double* K_LOS);
 

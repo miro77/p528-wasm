@@ -149,9 +149,9 @@ void LineOfSight(Path* path, Terminal* terminal_1, Terminal* terminal_2,
   LineOfSightSetup(path, terminal_1, terminal_2, f__mhz, A_dML__db, T_pol,
                    &psi_limit, &A_d_0__db);
 
-  RayTraceLayers los_layers;
+  LineOfSightShared shared;
   LineOfSightPoint(path, terminal_1, terminal_2, los_params, f__mhz, A_dML__db,
-                   p, d__km, T_pol, psi_limit, A_d_0__db, &los_layers, nullptr,
+                   p, d__km, T_pol, psi_limit, A_d_0__db, &shared, nullptr,
                    result, K_LOS);
 }
 
@@ -277,11 +277,13 @@ void LineOfSightSetup(Path* path, Terminal* terminal_1, Terminal* terminal_2,
  * @param[in] T_pol       Code indicating either polarization
  * @param[in] psi_limit   Result of LineOfSightSetup()
  * @param[in] A_d_0__db   Result of LineOfSightSetup()
- * @param[in,out] los_layers  Atmospheric layers between the terminals. They
- *                            are computed on first use and then reused for
- *                            every further distance.
- * @param[in,out] gamma_table  Optional attenuation table for the frequency,
- *                             used for rays that cannot share los_layers
+ * @param[in,out] shared  Atmospheric layers between the terminals and the
+ *                        rays through them. They are computed on first use
+ *                        and then reused for every further distance.
+ * @param[in,out] gamma_table  Optional attenuation table for the frequency.
+ *                             If given, the fast path for profiles is used:
+ *                             only the loss and the length of the ray are
+ *                             determined, from tables where possible.
  * @param[out] los_params  Struct containing LOS parameters
  * @param[out] result      Struct containing P.528 results
  * @param[out] K_LOS       K-value
@@ -290,7 +292,7 @@ void LineOfSightPoint(Path* path, Terminal* terminal_1, Terminal* terminal_2,
                       LineOfSightParams* los_params, double f__mhz,
                       double A_dML__db, double p, double d__km, int T_pol,
                       double psi_limit, double A_d_0__db,
-                      RayTraceLayers* los_layers,
+                      LineOfSightShared* shared,
                       SpecificAttenuationTable* gamma_table, Result* result,
                       double* K_LOS) {
   double psi;
@@ -322,21 +324,30 @@ void LineOfSightPoint(Path* path, Terminal* terminal_1, Terminal* terminal_2,
   } else {
     // Every ray runs between the same two heights: the layer properties
     // (the expensive part) are shared, only the ray geometry is traced.
-    if (!los_layers->ready) {
+    if (!shared->layers.ready) {
       RayTraceConfig config;
       config.temperature = GlobalTemperature;
       config.dry_pressure = GlobalPressure;
       config.wet_pressure = GlobalWetPressure;
       GetRayTraceLayers(f__mhz / 1000, terminal_1->h_r__km,
-                        terminal_2->h_r__km, config, los_layers);
+                        terminal_2->h_r__km, config, &shared->layers);
     }
     // Only the loss and the ray length are needed below. With a table the
     // caller asked for the fast path, so skip the bending calculation.
-    if (gamma_table)
-      RayTraceLoss(terminal_1->h_r__km, beta_1__rad, *los_layers,
-                   &result_slant);
-    else
-      RayTrace(terminal_1->h_r__km, beta_1__rad, *los_layers, &result_slant);
+    if (gamma_table) {
+      // With the layers fixed, the ray only depends on its elevation angle:
+      // it is interpolated where enough distances share a range of angles.
+      if (!shared->rays)
+        shared->rays.reset(
+            new LayerRayTable(terminal_1->h_r__km, &shared->layers));
+      if (!shared->rays->Lookup(beta_1__rad, &result_slant.A_gas__db,
+                                &result_slant.a__km))
+        RayTraceLoss(terminal_1->h_r__km, beta_1__rad, shared->layers,
+                     &result_slant);
+    } else {
+      RayTrace(terminal_1->h_r__km, beta_1__rad, shared->layers,
+               &result_slant);
+    }
   }
 
   result->A_a__db = result_slant.A_gas__db;

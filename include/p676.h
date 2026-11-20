@@ -118,6 +118,42 @@ private:
     vector<int> irregular_;                 // Layers that are evaluated for each ray instead
 };
 
+/** Loss and length of the rays through one set of layers versus their
+ *  elevation angle, see LayerRayTable.cpp. Not thread safe: it is filled on
+ *  first use. */
+class LayerRayTable
+{
+public:
+    static const int DEGREE = 16;           // Degree of the interpolation per segment
+
+    LayerRayTable(double h_1__km, const RayTraceLayers* layers);
+    LayerRayTable(const LayerRayTable&) = delete;
+    LayerRayTable& operator=(const LayerRayTable&) = delete;
+
+    bool Lookup(double beta_1__rad, double* A_gas__db, double* a__km);
+
+private:
+    struct Segment
+    {
+        enum State { EMPTY, READY, FAILED };
+        State state = EMPTY;                // FAILED: the interpolation is not accurate enough
+        int rays = 0;                       // Rays requested before the segment was built
+        double mid = 0;                     // Center of the segment
+        double scale = 0;                   // Maps cos(beta_1) to [-1, 1]
+        double c_A[DEGREE + 1];             // Chebyshev coefficients, loss in dB
+        double c_a[DEGREE + 1];             // Chebyshev coefficients, ray length in km
+    };
+
+    void Build(int i_segment);
+    void Trace(double cos_beta_1, double* A_gas__db, double* a__km) const;
+
+    double h_1__km_;                        // Height at which the rays start, in km
+    const RayTraceLayers* layers_;          // Layers of the rays
+    int exponent_first_ = 0;                // Segment 0 ends at cos(beta_1) = 2^exponent_first_
+    vector<Segment> segments_;              // Empty if the layers cannot be tabulated
+    double transform_[DEGREE + 1][DEGREE + 1]; // Node values to Chebyshev coefficients
+};
+
 class OxygenData
 {
 public:

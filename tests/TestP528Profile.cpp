@@ -195,6 +195,73 @@ TEST_F(TestRayTables, SurfaceRayMatchesRayTrace) {
     }
 }
 
+TEST_F(TestRayTables, LayerRayMatchesRayTrace) {
+    struct Geometry { double h_1__km; double h_2__km; double f__ghz; };
+    // low and high terminals, and a pair of terminals within one layer
+    for (const Geometry& g : { Geometry{ 0.005, 0.03, 0.45 }, Geometry{ 0.01, 1, 1.2 },
+                               Geometry{ 1, 12, 22.235 }, Geometry{ 3, 20, 15.5 },
+                               Geometry{ 10, 10.02, 30 } }) {
+        RayTraceLayers layers;
+        GetRayTraceLayers(g.f__ghz, g.h_1__km, g.h_2__km, Config(), &layers);
+        LayerRayTable rays(g.h_1__km, &layers);
+
+        // elevation angles from grazing to vertical, in steps of 0.5 %
+        int n_tabulated = 0;
+        int n_rays = 0;
+        for (double theta__rad = 1e-9; theta__rad < PI / 2; theta__rad *= 1.005) {
+            SCOPED_TRACE("h_1__km = " + std::to_string(g.h_1__km) + ", theta__rad = " + std::to_string(theta__rad));
+            double beta_1__rad = PI / 2 - theta__rad;
+            SlantPathAttenuationResult expected;
+            RayTraceLoss(g.h_1__km, beta_1__rad, layers, &expected);
+
+            n_rays++;
+            double A_gas__db, a__km;
+            if (!rays.Lookup(beta_1__rad, &A_gas__db, &a__km))
+                continue;
+            n_tabulated++;
+            EXPECT_NEAR(A_gas__db, expected.A_gas__db, 1e-9 * expected.A_gas__db + 1e-12);
+            EXPECT_NEAR(a__km, expected.a__km, 1e-9 * expected.a__km + 1e-12);
+        }
+        // every range of angles is tabulated after its first few rays
+        EXPECT_GT(n_tabulated, 0.8 * n_rays);
+
+        // the end points of the range: a grazing and a vertical ray
+        for (double beta_1__rad : { PI / 2, 0.0 }) {
+            SlantPathAttenuationResult expected;
+            RayTraceLoss(g.h_1__km, beta_1__rad, layers, &expected);
+            double A_gas__db, a__km;
+            ASSERT_TRUE(rays.Lookup(beta_1__rad, &A_gas__db, &a__km));
+            EXPECT_NEAR(A_gas__db, expected.A_gas__db, 1e-9 * expected.A_gas__db + 1e-12);
+            EXPECT_NEAR(a__km, expected.a__km, 1e-9 * expected.a__km + 1e-12);
+        }
+    }
+}
+
+TEST_F(TestRayTables, LayerRayLeavesUnsupportedRaysToTheCaller) {
+    RayTraceLayers layers;
+    GetRayTraceLayers(1.2, 1, 12, Config(), &layers);
+    LayerRayTable rays(1, &layers);
+
+    double A_gas__db, a__km;
+    // a segment is built once it pays off, not for its first rays
+    EXPECT_FALSE(rays.Lookup(1.0, &A_gas__db, &a__km));
+    for (int i = 0; i < 30; i++)
+        rays.Lookup(1.0 + 1e-3 * i, &A_gas__db, &a__km);
+    EXPECT_TRUE(rays.Lookup(1.0, &A_gas__db, &a__km));
+
+    // downward-looking rays do not stay within the layers
+    EXPECT_FALSE(rays.Lookup(PI / 2 + 0.01, &A_gas__db, &a__km));
+    EXPECT_FALSE(rays.Lookup(-0.01, &A_gas__db, &a__km));
+    EXPECT_FALSE(rays.Lookup(std::nan(""), &A_gas__db, &a__km));
+
+    // terminals at the same height: there are no layers to interpolate
+    RayTraceLayers no_layers;
+    GetRayTraceLayers(1.2, 1, 1, Config(), &no_layers);
+    LayerRayTable no_rays(1, &no_layers);
+    for (int i = 0; i < 30; i++)
+        EXPECT_FALSE(no_rays.Lookup(1.0, &A_gas__db, &a__km));
+}
+
 TEST_F(TestRayTables, SurfaceRayLeavesUnsupportedHeightsToTheCaller) {
     SpecificAttenuationTable table(1.2, Config());
     SurfaceRayTable rays(&table);
