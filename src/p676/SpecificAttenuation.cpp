@@ -1,5 +1,10 @@
 #include "p676.h"
 
+namespace ITS {
+namespace ITU {
+namespace PSeries {
+namespace p528 {
+
 /*=============================================================================
  |
  |  Description:  The specific gaseous attenuation due to dry air and
@@ -40,7 +45,11 @@ double SpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, doubl
 double OxygenSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa)
 {
     // partial Eqn 1
+#ifdef P676_HAVE_SIMD
     double N_o = OxygenRefractivitySimd(f__ghz, T__kelvin, e__hPa, p__hPa);
+#else
+    double N_o = OxygenRefractivity(f__ghz, T__kelvin, e__hPa, p__hPa);
+#endif
     double gamma_o = 0.1820 * f__ghz * N_o;
 
     return gamma_o;
@@ -62,8 +71,16 @@ double OxygenSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa,
 double WaterVapourSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa)
 {
     // partial Eqn 1
+#ifdef P676_HAVE_SIMD
     double N_w = WaterVapourRefractivitySimd(f__ghz, T__kelvin, e__hPa, p__hPa);
+#else
+    double N_w = WaterVapourRefractivity(f__ghz, T__kelvin, e__hPa, p__hPa);
+#endif
     double gamma_w = 0.1820 * f__ghz * N_w;
 
     return gamma_w;
 }
+}  // namespace p528
+}  // namespace PSeries
+}  // namespace ITU
+}  // namespace ITS

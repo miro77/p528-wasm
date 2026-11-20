@@ -1,6 +1,10 @@
 #include "p676.h"
+#include <cmath>
 
-#include <math.h>
+namespace ITS {
+namespace ITU {
+namespace PSeries {
+namespace p528 {
 
 /*=============================================================================
  |
@@ -27,3 +31,8 @@ double RefractiveIndex(double p__hPa, double T__kelvin, double e__hPa)
 
     return n;
 }
+
+}  // namespace p528
+}  // namespace PSeries
+}  // namespace ITU
+}  // namespace ITS

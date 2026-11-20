@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="M:\test_repos\p528\src\p528\CombineDistributions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\FindKForYpiAt99Percent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\GetPathLoss.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\InverseComplementaryCumulativeDistributionFunction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\LineOfSight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\LinearInterpolation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\LongTermVariability.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\NakagamiRice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\P528.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\RayOptics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\ReflectionCoefficients.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\SmoothEarthDiffraction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\TerminalGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\TranshorizonSearch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\Troposcatter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\ValidateInputs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p528\ReturnCodes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\GlobalWetPressure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\LineShapeFactor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\NonresonantDebyeAttenuation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\OxygenData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\RayTrace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\RefractiveIndex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\Refractivity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\SlantPath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\SpecificAttenuation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\TerrestrialPath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\WaterVapourData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p676\WaterVapourDensityToPartialPressure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p835\Conversions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="M:\test_repos\p528\src\p835\MeanAnnualGlobalReferenceAtmosphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="M:\test_repos\p528\include\p528.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="M:\test_repos\p528\include\p676.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="M:\test_repos\p528\include\p835.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="M:\test_repos\p528\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{8C117914-663F-39EC-BB8F-7FB44BCD26B8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{E3AFE8D2-D2F3-31B3-9776-2EF92C54F8F4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

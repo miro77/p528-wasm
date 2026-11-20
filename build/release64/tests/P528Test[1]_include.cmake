@@ -1,0 +1,5 @@
+if(EXISTS "M:/test_repos/p528/build/release64/tests/P528Test[1]_tests.cmake")
+  include("M:/test_repos/p528/build/release64/tests/P528Test[1]_tests.cmake")
+else()
+  add_test(P528Test_NOT_BUILT P528Test_NOT_BUILT)
+endif()

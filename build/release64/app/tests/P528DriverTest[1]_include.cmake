@@ -1,0 +1,5 @@
+if(EXISTS "M:/test_repos/p528/build/release64/app/tests/P528DriverTest[1]_tests.cmake")
+  include("M:/test_repos/p528/build/release64/app/tests/P528DriverTest[1]_tests.cmake")
+else()
+  add_test(P528DriverTest_NOT_BUILT P528DriverTest_NOT_BUILT)
+endif()

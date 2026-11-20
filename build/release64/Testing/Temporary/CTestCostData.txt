@@ -1,0 +1,42 @@
+TestP528.TestP528Load 1 0.0086272
+TestP528.TestP528Success 5 0.779588
+GoogleTestVerification.UninstantiatedParameterizedTestSuite<TestP528DataTables> 0 0
+DriverTest.MissingOptionError1 5 0.0085529
+DriverTest.MissingOptionError2 5 0.00670108
+DriverTest.InvalidOptionError 5 0.00585706
+DriverTest.OpeningInputFileError 5 0.00671346
+DriverTest.OpeningOutputFileError 5 0.0100283
+DriverTest.ValidationInFileError 5 0.00648676
+DriverTest.ValidationOutFileError 5 0.00652
+ModelTest.TestSuccess 5 0.00988408
+ModelTest.TestParseError 5 0.00659326
+ModelTest.TestParseDistanceError 5 0.00595934
+ModelTest.TestParseLowHeightError 5 0.00490398
+ModelTest.TestParseHighHeightError 5 0.00475884
+ModelTest.TestParseFrequencyError 5 0.00478772
+ModelTest.TestParsePolarizationError 5 0.00724376
+ModelTest.TestParseInvalidPolarizationValue 5 0.00508716
+ModelTest.TestParseTimePercentageError 5 0.00495254
+TestP528Profile.MatchesPointwiseGroundToAir 2 0.1754
+TestP528Profile.MatchesPointwiseAirToAir 2 0.251197
+TestP528Profile.MatchesPointwiseLowTerminals 2 0.0791738
+TestP528Profile.MatchesPointwiseWithHeightWarning 2 0.159993
+TestP528Profile.DistancesInAnyOrder 2 0.0507687
+TestP528Profile.SameHeightsAtZeroDistance 2 0.0167781
+TestP528Profile.InvalidDistanceOnlyAffectsItsPoint 2 0.0104929
+TestP528Profile.InvalidInputsFailEveryPoint 2 0.0034936
+TestP528Profile.ReturnCodesAreOptional 2 0.0112086
+TestP528Profile.WarningsAreSummarized 2 0.0114004
+TestP528Profile.EmptyProfile 2 0.0039353
+P528Bench.ProfileMatchesReference 1 14.966
+TestP528/TestP528DataTables.TestDataTable/"1,200 MHz - Lb(0.01)_P528.csv" 1 3.4379
+TestP528/TestP528DataTables.TestDataTable/"100 MHz - Lb(0.05)_P528.csv" 1 3.20546
+TestP528/TestP528DataTables.TestDataTable/"125 MHz - Lb(0.10)_P528.csv" 1 3.17554
+TestP528/TestP528DataTables.TestDataTable/"15,500 MHz - Lb(0.95)_P528.csv" 1 3.17416
+TestP528/TestP528DataTables.TestDataTable/"2,400 MHz - Lb(0.05)_P528.csv" 1 3.17476
+TestP528/TestP528DataTables.TestDataTable/"30,000 MHz - Lb(0.01)_P528.csv" 1 3.19542
+TestP528/TestP528DataTables.TestDataTable/"300 MHz - Lb(0.50)_P528.csv" 1 3.18155
+TestP528/TestP528DataTables.TestDataTable/"5,100 MHz - Lb(0.10)_P528.csv" 1 3.20807
+TestP528/TestP528DataTables.TestDataTable/"600 MHz - Lb(0.95)_P528.csv" 1 3.16753
+TestP528/TestP528DataTables.TestDataTable/"9,400 MHz - Lb(0.50)_P528.csv" 1 3.19284
+---

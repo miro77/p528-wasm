@@ -1,6 +1,10 @@
 #include "p676.h"
+#include <cmath>
 
-#include <math.h>
+namespace ITS {
+namespace ITU {
+namespace PSeries {
+namespace p528 {
 
 /*=============================================================================
  |
@@ -27,3 +31,7 @@ double NonresonantDebyeAttenuation(double f__ghz, double e__hPa, double p__hPa, 
 
     return N_D;
 }
+}  // namespace p528
+}  // namespace PSeries
+}  // namespace ITU
+}  // namespace ITS

@@ -1,11 +1,10 @@
 #include "p676.h"
+#include <cmath>
 
-#include <math.h>
-
-#include <experimental/simd>
-namespace stdx = std::experimental;
-
-using doublev = stdx::native_simd<double>;
+namespace ITS {
+namespace ITU {
+namespace PSeries {
+namespace p528 {
 
 /*=============================================================================
  |
@@ -30,6 +29,7 @@ double LineShapeFactor(double f__ghz, double f_i__ghz, double delta_f__ghz, doub
     return F_i;
 }
 
+#ifdef P676_HAVE_SIMD
 doublev LineShapeFactorSimd(double f__ghz, doublev f_i__ghz, doublev delta_f__ghz, doublev delta)
 {
     doublev term1 = f__ghz / f_i__ghz;
@@ -40,3 +40,9 @@ doublev LineShapeFactorSimd(double f__ghz, doublev f_i__ghz, doublev delta_f__gh
 
     return F_i;
 }
+#endif
+
+}  // namespace p528
+}  // namespace PSeries
+}  // namespace ITU
+}  // namespace ITS

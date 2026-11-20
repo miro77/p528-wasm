@@ -1,11 +1,10 @@
 #include "p676.h"
+#include <cmath>
 
-#include <math.h>
-
-#include <experimental/simd>
-namespace stdx = std::experimental;
-
-using doublev = stdx::native_simd<double>;
+namespace ITS {
+namespace ITU {
+namespace PSeries {
+namespace p528 {
 
 /*=============================================================================
  |
@@ -55,6 +54,7 @@ double OxygenRefractivity(double f__ghz, double T__kelvin, double e__hPa, double
     return N_o;
 }
 
+#ifdef P676_HAVE_SIMD
 double OxygenRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, double p__hPa)
 {
     double theta = 300 / T__kelvin;
@@ -119,6 +119,7 @@ double OxygenRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, do
 
     return N_o;
 }
+#endif
 
 /*=============================================================================
  |
@@ -164,6 +165,7 @@ double WaterVapourRefractivity(double f__ghz, double T__kelvin, double e__hPa, d
     return N_w;
 }
 
+#ifdef P676_HAVE_SIMD
 double WaterVapourRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, double P__hPa)
 {
     double theta = 300 / T__kelvin;
@@ -224,3 +226,8 @@ double WaterVapourRefractivitySimd(double f__ghz, double T__kelvin, double e__hP
 
     return N_w;
 }
+#endif
+}  // namespace p528
+}  // namespace PSeries
+}  // namespace ITU
+}  // namespace ITS

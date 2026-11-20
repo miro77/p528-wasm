@@ -1,17 +1,32 @@
 #pragma once
-#ifndef ITS_ITU_PSERIES_P676_H
-#define ITS_ITU_PSERIES_P676_H
 
 #include <vector>
 #include <algorithm>
 
+// The SIMD code paths use std::experimental::simd including its math
+// functions, which only libstdc++ (GCC) provides. Other standard libraries,
+// e.g. the one of MSVC, use the scalar code paths.
+#ifdef __has_include
+#if __has_include(<experimental/simd>) && defined(__GLIBCXX__)
+#define P676_HAVE_SIMD 1
+#endif
+#endif
+
+#ifdef P676_HAVE_SIMD
 #include <experimental/simd>
 namespace stdx = std::experimental;
 
 using doublev = stdx::native_simd<double>;
 using intv = stdx::native_simd<int>;
+#endif
 
 using namespace std;
+
+namespace ITS {
+namespace ITU {
+namespace PSeries {
+namespace p528 {
+
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -65,7 +80,9 @@ public:
 };
 
 double LineShapeFactor(double f__ghz, double f_i__ghz, double delta_f__ghz, double delta);
+#ifdef P676_HAVE_SIMD
 doublev LineShapeFactorSimd(double f__ghz, doublev f_i__ghz, doublev delta_f__ghz, doublev delta);
+#endif
 double NonresonantDebyeAttenuation(double f__ghz, double e__hPa, double p__hPa, double theta);
 double RefractiveIndex(double p__hPa, double T__kelvin, double e__hPa);
 void GetLayerProperties(double f__ghz, double h_i__km, RayTraceConfig config,
@@ -73,9 +90,13 @@ void GetLayerProperties(double f__ghz, double h_i__km, RayTraceConfig config,
 
 double SpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double OxygenRefractivity(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
+#ifdef P676_HAVE_SIMD
 double OxygenRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
+#endif
 double WaterVapourRefractivity(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
+#ifdef P676_HAVE_SIMD
 double WaterVapourRefractivitySimd(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
+#endif
 double OxygenSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double P__hPa);
 double WaterVapourSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double WaterVapourDensityToPartialPressure(double rho__g_m3, double T__kelvin);
@@ -87,4 +108,7 @@ int SlantPathAttenuation(double f__ghz, double h_1__km, double h_2__km, double b
                          SlantPathAttenuationResult *result);
 
 double GlobalWetPressure(double h__km);
-#endif
+} // namespace p528
+} // namespace PSeries
+} // namespace ITU
+} // namespace ITS
