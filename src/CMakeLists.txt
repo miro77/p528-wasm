@@ -37,6 +37,7 @@ set(LIB_FILES
     "p676/SlantPath.cpp"
     "p676/SpecificAttenuation.cpp"
     "p676/SpecificAttenuationTable.cpp"
+    "p676/SurfaceRayTable.cpp"
     "p676/TerrestrialPath.cpp"
     "p676/WaterVapourData.cpp"
     "p676/WaterVapourDensityToPartialPressure.cpp"

@@ -53,6 +53,13 @@ struct ProfileContext {
    */
   std::unique_ptr<SpecificAttenuationTable> gamma_table;
 
+  /**
+   * Rays from the surface up to the common volume, for f__mhz. Optional: if
+   * set, the ray of a distance beyond the horizon is interpolated instead of
+   * traced. Needs gamma_table.
+   */
+  std::unique_ptr<SurfaceRayTable> surface_rays;
+
   /** @name Transhorizon region, filled on first use */
   ///@{
   bool transhorizon_ready = false;

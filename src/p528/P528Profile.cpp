@@ -76,6 +76,8 @@ int P528_Profile(const double* d__km, int n_points, double h_1__meter,
         config.wet_pressure = GlobalWetPressure;
         context.gamma_table.reset(
             new SpecificAttenuationTable(f__mhz / 1000, config));
+        context.surface_rays.reset(
+            new SurfaceRayTable(context.gamma_table.get()));
       }
 
       TroposcatterParams tropo;

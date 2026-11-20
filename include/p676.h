@@ -85,6 +85,39 @@ private:
     const Segment* last_ = nullptr;         // Segment of the previous lookup
 };
 
+/** Loss and length of the rays that leave the surface horizontally and end at
+ *  an arbitrary height, for one frequency, see SurfaceRayTable.cpp. Not thread
+ *  safe: it is filled on first use. */
+class SurfaceRayTable
+{
+public:
+    static const int NODES = 8;             // Interpolation nodes in the layer scale m
+    static const int CHECKS = 2;            // Additional rays that verify the interpolation
+    static const int LAST_LAYERS = 921;     // Layers up to the top of the reference atmosphere
+
+    explicit SurfaceRayTable(SpecificAttenuationTable* table);
+    SurfaceRayTable(const SurfaceRayTable&) = delete;
+    SurfaceRayTable& operator=(const SurfaceRayTable&) = delete;
+
+    bool Lookup(double h_2__km, double* A_gas__db, double* a__km);
+
+private:
+    void Extend(int n_layers);
+    void LayerTerms(int i, double m, double n_1, double* a_i__km, double* A_i__db) const;
+
+    SpecificAttenuationTable* table_;       // Layer properties for the frequency
+    int rays_ = 0;                          // Rays requested before the table was built
+    double m_mid_;                          // Center of the range of m
+    double m_half_;                         // Half width of the range of m
+    double m_node_[NODES + CHECKS];         // m of the traced rays: nodes, then check points
+    double n_1_[NODES + CHECKS];            // Refractive index of layer 1 for the traced rays
+    double transform_[NODES][NODES];        // Node values to Chebyshev coefficients
+    int n_layers_ = 0;                      // Layers covered so far
+    vector<double> c_A_;                    // Coefficients of the loss up to each layer, in dB
+    vector<double> c_a_;                    // Coefficients of the length up to each layer, in km
+    vector<int> irregular_;                 // Layers that are evaluated for each ray instead
+};
+
 class OxygenData
 {
 public:
@@ -123,6 +156,8 @@ double OxygenSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa,
 double WaterVapourSpecificAttenuation(double f__ghz, double T__kelvin, double e__hPa, double p__hPa);
 double WaterVapourDensityToPartialPressure(double rho__g_m3, double T__kelvin);
 
+double LayerExp(int k);
+double LayerThickness(double m, int i);
 void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
     RayTraceConfig config, SlantPathAttenuationResult* result,
     SpecificAttenuationTable* table = nullptr);

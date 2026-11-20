@@ -222,6 +222,14 @@ void PrintStageBreakdown(const Scenario& s, int repeat) {
     SlantPathAttenuation(s.f__mhz / 1000, 0, tropo.h_v__km * (1 + 1e-4 * i),
                          PI / 2, &slant, &table);
   });
+  SurfaceRayTable surface_rays(&table);
+  time_fast("transhorizon: ray 0 -> h_v (ray table)", [&](int i) {
+    // the first lookups are declined, until the table pays off
+    if (!surface_rays.Lookup(tropo.h_v__km * (1 + 1e-4 * i), &slant.A_gas__db,
+                             &slant.a__km))
+      SlantPathAttenuation(s.f__mhz / 1000, 0, tropo.h_v__km * (1 + 1e-4 * i),
+                           PI / 2, &slant, &table);
+  });
   time_fast("variability: LongTermVariability (x2)", [&](int i) {
     double Y, A_Y;
     LongTermVariability(t1.d_r__km, t2.d_r__km, d_ML__km + 0.01 * i, s.f__mhz,

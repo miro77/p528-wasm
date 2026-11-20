@@ -1,6 +1,9 @@
 #include "P528GTest.h"
 #include "p528.h"
+#include "p676.h"
+#include "p835.h"
 
+#include <cmath>
 #include <vector>
 
 using namespace ITS::ITU::PSeries::p528;
@@ -140,4 +143,74 @@ TEST_F(TestP528Profile, WarningsAreSummarized) {
 TEST_F(TestP528Profile, EmptyProfile) {
     EXPECT_EQ(P528_Profile(nullptr, 0, 10, 1000, 1200, POLARIZATION__HORIZONTAL, 50,
         nullptr, nullptr), SUCCESS);
+}
+
+/*=============================================================================
+ |
+ |  Description:  Tests for the ray tables behind P528_Profile(). A table
+ |                has to reproduce the ray trace it replaces.
+ |
+ *===========================================================================*/
+class TestRayTables : public ::testing::Test {
+protected:
+    // Allowed deviation of a tabulated ray from the traced one. The traced
+    // ray itself is only reproducible to about 1e-8 km, because of rounding
+    // in its lowest layers.
+    double TOLERANCE__DB = 2.0e-8;
+    double TOLERANCE__KM = 2.0e-7;
+
+    RayTraceConfig Config() {
+        RayTraceConfig config;
+        config.temperature = GlobalTemperature;
+        config.dry_pressure = GlobalPressure;
+        config.wet_pressure = GlobalWetPressure;
+        return config;
+    }
+};
+
+TEST_F(TestRayTables, SurfaceRayMatchesRayTrace) {
+    // 22.235 GHz is the center of a water vapour line, where the absorption
+    // is strongest and the kinks of the reference atmosphere show most
+    for (double f__ghz : { 0.1, 1.2, 15.5, 22.235, 30.0 }) {
+        SpecificAttenuationTable table(f__ghz, Config());
+        SurfaceRayTable rays(&table);
+
+        // from 2 m up to the top of the atmosphere, in steps of 0.7 %: this
+        // ends rays within every layer and crosses every kink
+        int n_tabulated = 0;
+        for (double h__km = 0.002; h__km < 99; h__km *= 1.007) {
+            SCOPED_TRACE("f__ghz = " + std::to_string(f__ghz) + ", h__km = " + std::to_string(h__km));
+            SlantPathAttenuationResult expected;
+            SlantPathAttenuation(f__ghz, 0, h__km, PI / 2, &expected, &table);
+
+            double A_gas__db, a__km;
+            if (!rays.Lookup(h__km, &A_gas__db, &a__km))
+                continue;
+            n_tabulated++;
+            EXPECT_NEAR(A_gas__db, expected.A_gas__db, TOLERANCE__DB);
+            EXPECT_NEAR(a__km, expected.a__km, TOLERANCE__KM);
+        }
+        // only the first few rays and the very short ones are left to the caller
+        EXPECT_GT(n_tabulated, 1100);
+    }
+}
+
+TEST_F(TestRayTables, SurfaceRayLeavesUnsupportedHeightsToTheCaller) {
+    SpecificAttenuationTable table(1.2, Config());
+    SurfaceRayTable rays(&table);
+
+    double A_gas__db, a__km;
+    // the table is built once it pays off, not for the first rays
+    EXPECT_FALSE(rays.Lookup(1.0, &A_gas__db, &a__km));
+    for (int i = 0; i < 20; i++)
+        rays.Lookup(1.0 + 0.01 * i, &A_gas__db, &a__km);
+    EXPECT_TRUE(rays.Lookup(1.0, &A_gas__db, &a__km));
+
+    // heights outside of the reference atmosphere, and rays of a few layers
+    EXPECT_FALSE(rays.Lookup(0, &A_gas__db, &a__km));
+    EXPECT_FALSE(rays.Lookup(-1, &A_gas__db, &a__km));
+    EXPECT_FALSE(rays.Lookup(100, &A_gas__db, &a__km));
+    EXPECT_FALSE(rays.Lookup(1e300, &A_gas__db, &a__km));
+    EXPECT_FALSE(rays.Lookup(std::nan(""), &A_gas__db, &a__km));
+    EXPECT_FALSE(rays.Lookup(1e-4, &A_gas__db, &a__km));
 }

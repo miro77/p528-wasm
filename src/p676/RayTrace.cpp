@@ -20,7 +20,7 @@ namespace p528 {
  |      Returns:  exp(k / 100)
  |
  *===========================================================================*/
-static double LayerExp(int k)
+double LayerExp(int k)
 {
     // the top of the reference atmosphere (100 km) is at layer 922
     static const int SIZE = 1024;

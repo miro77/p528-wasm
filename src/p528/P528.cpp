@@ -346,9 +346,14 @@ void EvaluateProfilePoint(ProfileContext* context, double d__km,
     /////////////////////////////////////////////
     // Atmospheric absorption for transhorizon path
     //
+    // The ray from the surface to the common volume only depends on h_v, so
+    // a profile takes it from a table once that pays off.
     SlantPathAttenuationResult result_v;
-    SlantPathAttenuation(f__mhz / 1000, 0, tropo->h_v__km, PI / 2, &result_v,
-                         context->gamma_table.get());
+    if (!(context->surface_rays &&
+          context->surface_rays->Lookup(tropo->h_v__km, &result_v.A_gas__db,
+                                        &result_v.a__km)))
+      SlantPathAttenuation(f__mhz / 1000, 0, tropo->h_v__km, PI / 2, &result_v,
+                           context->gamma_table.get());
 
     result->A_a__db = terminal_1->A_a__db + terminal_2->A_a__db +
                       2 * result_v.A_gas__db;  // [Eqn 3-17]
