@@ -222,6 +222,11 @@ void PrintStageBreakdown(const Scenario& s, int repeat) {
     SlantPathAttenuation(s.f__mhz / 1000, t1.h_r__km, t2.h_r__km,
                          PI / 2 + 1e-4 * (1 + i % 7), &slant, &table);
   });
+  GrazingRayCache grazing_rays(s.f__mhz / 1000, t1.h_r__km, t2.h_r__km, &table);
+  time_fast("LOS: grazing ray (cache)", [&](int i) {
+    grazing_rays.Lookup(PI / 2 + 1e-4 * (1 + i % 7), &slant.A_gas__db,
+                        &slant.a__km);
+  });
   time_fast("transhorizon: Troposcatter", [&](int i) {
     Troposcatter(&t1, &t2, d_ML__km + 50 + 0.01 * i, s.f__mhz, &tropo);
   });

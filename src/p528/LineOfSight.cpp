@@ -318,9 +318,19 @@ void LineOfSightPoint(Path* path, Terminal* terminal_1, Terminal* terminal_2,
   if (beta_1__rad > PI / 2) {
     // The ray first descends to a grazing height that depends on the
     // distance, so the layers differ from point to point.
-    SlantPathAttenuation(f__mhz / 1000, terminal_1->h_r__km,
-                         terminal_2->h_r__km, beta_1__rad, &result_slant,
-                         gamma_table);
+    if (gamma_table) {
+      // Many distances of a profile share a grazing height, and all of them
+      // share the search for it.
+      if (!shared->grazing_rays)
+        shared->grazing_rays.reset(
+            new GrazingRayCache(f__mhz / 1000, terminal_1->h_r__km,
+                                terminal_2->h_r__km, gamma_table));
+      shared->grazing_rays->Lookup(beta_1__rad, &result_slant.A_gas__db,
+                                   &result_slant.a__km);
+    } else {
+      SlantPathAttenuation(f__mhz / 1000, terminal_1->h_r__km,
+                           terminal_2->h_r__km, beta_1__rad, &result_slant);
+    }
   } else {
     // Every ray runs between the same two heights: the layer properties
     // (the expensive part) are shared, only the ray geometry is traced.

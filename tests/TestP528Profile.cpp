@@ -262,6 +262,32 @@ TEST_F(TestRayTables, LayerRayLeavesUnsupportedRaysToTheCaller) {
         EXPECT_FALSE(no_rays.Lookup(1.0, &A_gas__db, &a__km));
 }
 
+TEST_F(TestRayTables, GrazingRayEqualsSlantPathAttenuation) {
+    struct Geometry { double h_1__km; double h_2__km; double f__ghz; double theta_min__rad; };
+    // the largest depression angle is the one of the ray that grazes the surface
+    for (const Geometry& g : { Geometry{ 0.005, 0.03, 0.45, -0.001 }, Geometry{ 1, 12, 5.1, -0.0145 },
+                               Geometry{ 3, 20, 15.5, -0.0248 }, Geometry{ 3, 3, 15.5, -0.0248 } }) {
+        SpecificAttenuationTable table(g.f__ghz, Config());
+        GrazingRayCache rays(g.f__ghz, g.h_1__km, g.h_2__km, &table);
+
+        // The cache only reorganizes the calculation, so the results are equal.
+        // Every angle is asked for twice: first it is traced, then remembered.
+        for (int repeat = 0; repeat < 2; repeat++) {
+            for (int i = 1; i <= 400; i++) {
+                double beta_1__rad = PI / 2 - g.theta_min__rad * i / 400;
+                SCOPED_TRACE("h_1__km = " + std::to_string(g.h_1__km) + ", i = " + std::to_string(i));
+                SlantPathAttenuationResult expected;
+                SlantPathAttenuation(g.f__ghz, g.h_1__km, g.h_2__km, beta_1__rad, &expected, &table);
+
+                double A_gas__db, a__km;
+                rays.Lookup(beta_1__rad, &A_gas__db, &a__km);
+                EXPECT_EQ(A_gas__db, expected.A_gas__db);
+                EXPECT_EQ(a__km, expected.a__km);
+            }
+        }
+    }
+}
+
 TEST_F(TestRayTables, SurfaceRayLeavesUnsupportedHeightsToTheCaller) {
     SpecificAttenuationTable table(1.2, Config());
     SurfaceRayTable rays(&table);

@@ -23,6 +23,8 @@ struct LineOfSightShared {
   RayTraceLayers layers;
   /** Rays through the layers versus their elevation angle (profiles only) */
   std::unique_ptr<LayerRayTable> rays;
+  /** Downward-looking rays between the two terminals (profiles only) */
+  std::unique_ptr<GrazingRayCache> grazing_rays;
 };
 
 /**

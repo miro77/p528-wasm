@@ -154,6 +154,41 @@ private:
     double transform_[DEGREE + 1][DEGREE + 1]; // Node values to Chebyshev coefficients
 };
 
+/** Rays with a negative elevation angle between two heights: remembers the
+ *  search for the grazing height and the traces from it, see
+ *  GrazingRayCache.cpp. Not thread safe: it is filled on first use. */
+class GrazingRayCache
+{
+public:
+    GrazingRayCache(double f__ghz, double h_1__km, double h_2__km,
+        SpecificAttenuationTable* table);
+    GrazingRayCache(const GrazingRayCache&) = delete;
+    GrazingRayCache& operator=(const GrazingRayCache&) = delete;
+
+    void Lookup(double beta_1__rad, double* A_gas__db, double* a__km);
+
+private:
+    struct Node
+    {
+        double h_G__km = 0;                 // Candidate for the grazing height, in km
+        double grazing_term = 0;            // n (a_0 + h) at that height
+        int child[2] = { -1, -1 };          // Next candidates below and above, -1 if not visited
+        bool traced = false;                // true once the two rays from h_G__km are traced
+        double A_gas__db = 0;               // Loss of the two rays, in dB
+        double a__km = 0;                   // Length of the two rays, in km
+    };
+
+    int AddNode(double h_G__km);
+
+    double f__ghz_;
+    double h_1__km_;
+    double h_2__km_;
+    RayTraceConfig config_;
+    SpecificAttenuationTable* table_;       // Layer properties for the frequency
+    double n_1_;                            // Refractive index at h_1
+    vector<Node> nodes_;                    // Heights the search has visited, the first one is its start
+};
+
 class OxygenData
 {
 public:
