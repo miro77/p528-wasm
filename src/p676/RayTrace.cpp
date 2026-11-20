@@ -69,6 +69,12 @@ double LayerThickness(double m, int i)
  |                table         - Optional table for the frequency. If given,
  |                                the layer properties are interpolated
  |                                instead of computed for each layer.
+ |                exact_refractive_index - Only with a table: interpolate
+ |                                the specific attenuation alone. The
+ |                                refractive index is cheap, and with the
+ |                                exact one the geometry of a ray (length,
+ |                                bending, arrival angle) is bit-identical
+ |                                to that of a ray without a table.
  |
  |       Output:  layers        - Layer structure
  |
@@ -76,7 +82,7 @@ double LayerThickness(double m, int i)
  |
  *===========================================================================*/
 static void GetLayerProperties(double f__ghz, double h_i__km, RayTraceConfig config,
-    SpecificAttenuationTable* table, double* n, double* gamma)
+    SpecificAttenuationTable* table, bool exact_refractive_index, double* n, double* gamma)
 {
     if (!table)
     {
@@ -85,10 +91,21 @@ static void GetLayerProperties(double f__ghz, double h_i__km, RayTraceConfig con
     }
 
     table->Lookup(h_i__km, n, gamma);
+
+    if (exact_refractive_index)
+    {
+        // as in GetLayerProperties() without a table
+        double T__kelvin = config.temperature(h_i__km);
+        double p__hPa = config.dry_pressure(h_i__km);
+        double e__hPa = config.wet_pressure(h_i__km);
+
+        *n = RefractiveIndex(p__hPa, T__kelvin, e__hPa);
+    }
 }
 
 void GetRayTraceLayers(double f__ghz, double h_1__km, double h_2__km,
-    RayTraceConfig config, RayTraceLayers* layers, SpecificAttenuationTable* table)
+    RayTraceConfig config, RayTraceLayers* layers, SpecificAttenuationTable* table,
+    bool exact_refractive_index)
 {
     // Equations 16(a)-(c)
     int i_lower = floor(100 * log(1e4 * h_1__km * (exp(1. / 100.) - 1) + 1) + 1);
@@ -107,14 +124,15 @@ void GetRayTraceLayers(double f__ghz, double h_1__km, double h_2__km,
     // starting layer
     double delta_i__km = LayerThickness(m, i_lower);
     double h_i__km = h_1__km + m * ((LayerExp(i_lower - 1) - LayerExp(i_lower - 1)) / (LayerExp(1) - 1));
-    GetLayerProperties(f__ghz, h_i__km + delta_i__km / 2, config, table, &layers->n[0], &layers->gamma[0]);
+    GetLayerProperties(f__ghz, h_i__km + delta_i__km / 2, config, table, exact_refractive_index,
+        &layers->n[0], &layers->gamma[0]);
 
     for (int i = i_lower; i <= i_upper - 1; i++)
     {
         double delta_ii__km = LayerThickness(m, i + 1);
         double h_ii__km = h_1__km + m * ((LayerExp(i + 1 - 1) - LayerExp(i_lower - 1)) / (LayerExp(1) - 1));
 
-        GetLayerProperties(f__ghz, h_ii__km + delta_ii__km / 2, config, table,
+        GetLayerProperties(f__ghz, h_ii__km + delta_ii__km / 2, config, table, exact_refractive_index,
             &layers->n[i + 1 - i_lower], &layers->gamma[i + 1 - i_lower]);
     }
 

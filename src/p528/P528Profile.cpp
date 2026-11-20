@@ -64,12 +64,8 @@ int P528_Profile(const double* d__km, int n_points, double h_1__meter,
       // Reaching this point means that the distance-independent inputs are
       // valid, so the shared state can be built (once).
       if (!context_ready) {
-        InitializeProfileContext(h_1__meter, h_2__meter, f__mhz, T_pol, p,
-                                 &context);
-        context_ready = true;
-
-        // All quantities above are exact. The rays traced per distance share
-        // one attenuation table for the frequency.
+        // All rays of the profile share one attenuation table for the
+        // frequency, including those of the terminal geometry.
         RayTraceConfig config;
         config.temperature = GlobalTemperature;
         config.dry_pressure = GlobalPressure;
@@ -78,6 +74,10 @@ int P528_Profile(const double* d__km, int n_points, double h_1__meter,
             new SpecificAttenuationTable(f__mhz / 1000, config));
         context.surface_rays.reset(
             new SurfaceRayTable(context.gamma_table.get()));
+
+        InitializeProfileContext(h_1__meter, h_2__meter, f__mhz, T_pol, p,
+                                 &context);
+        context_ready = true;
       }
 
       TroposcatterParams tropo;

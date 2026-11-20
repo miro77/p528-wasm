@@ -81,9 +81,10 @@ struct ProfileContext {
   ///@}
 
   /**
-   * Specific attenuation versus height for f__mhz. Optional: if set, rays
-   * whose layers change with the distance interpolate the attenuation instead
-   * of summing it line by line. That pays off for more than a few points.
+   * Specific attenuation versus height for f__mhz. Optional: if set before
+   * InitializeProfileContext(), all rays interpolate the attenuation instead
+   * of summing it line by line, and only their loss and length are computed
+   * where nothing else is needed. That pays off for more than a few points.
    */
   std::unique_ptr<SpecificAttenuationTable> gamma_table;
 
@@ -114,6 +115,9 @@ void InitializeProfileContext(double h_1__meter, double h_2__meter,
 void EvaluateProfilePoint(ProfileContext* context, double d__km,
                           Result* result, TroposcatterParams* tropo,
                           LineOfSightParams* los_params);
+
+void TerminalGeometry(double f__mhz, Terminal* terminal,
+                      SpecificAttenuationTable* table);
 
 double RayOpticsDistance(Terminal* terminal_1, Terminal* terminal_2,
                          double psi);

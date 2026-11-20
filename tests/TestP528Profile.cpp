@@ -250,6 +250,30 @@ TEST_F(TestRayTables, SurfaceRayMatchesRayTrace) {
     }
 }
 
+TEST_F(TestRayTables, TerminalGeometryOnlyInterpolatesTheAbsorption) {
+    for (double f__mhz : { 300.0, 5100.0, 22235.0 }) {
+        SpecificAttenuationTable table(f__mhz / 1000, Config());
+        for (double h_r__km : { 0.0015, 0.03, 1.0, 12.0, 20.0, 80.0 }) {
+            SCOPED_TRACE("f__mhz = " + std::to_string(f__mhz) + ", h_r__km = " + std::to_string(h_r__km));
+            Terminal exact, tabulated;
+            exact.h_r__km = h_r__km;
+            tabulated.h_r__km = h_r__km;
+            TerminalGeometry(f__mhz, &exact);
+            TerminalGeometry(f__mhz, &tabulated, &table);
+
+            // the geometry decides propagation modes and search steps: no rounding allowed
+            EXPECT_EQ(tabulated.d_r__km, exact.d_r__km);
+            EXPECT_EQ(tabulated.a__km, exact.a__km);
+            EXPECT_EQ(tabulated.theta__rad, exact.theta__rad);
+            EXPECT_EQ(tabulated.phi__rad, exact.phi__rad);
+            EXPECT_EQ(tabulated.h_e__km, exact.h_e__km);
+            EXPECT_EQ(tabulated.delta_h__km, exact.delta_h__km);
+
+            EXPECT_NEAR(tabulated.A_a__db, exact.A_a__db, 1e-9 * exact.A_a__db + 1e-12);
+        }
+    }
+}
+
 TEST_F(TestRayTables, LayerRayMatchesRayTrace) {
     struct Geometry { double h_1__km; double h_2__km; double f__ghz; };
     // low and high terminals, and a pair of terminals within one layer

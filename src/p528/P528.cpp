@@ -121,6 +121,9 @@ int P528_Ex(double d__km, double h_1__meter, double h_2__meter, double f__mhz,
  * geometries, the smooth earth diffraction line and the line-of-sight setup.
  * The inputs must have passed ValidateInputs().
  *
+ * If context->gamma_table is set, the absorption of the terminal rays is taken
+ * from it. Everything else is the same with and without a table.
+ *
  * @param[in]  h_1__meter  Height of the low terminal, in meters
  * @param[in]  h_2__meter  Height of the high terminal, in meters
  * @param[in]  f__mhz      Frequency, in MHz
@@ -145,11 +148,11 @@ void InitializeProfileContext(double h_1__meter, double h_2__meter,
 
   // Step 1 for low terminal
   terminal_1->h_r__km = h_1__meter / 1000;
-  TerminalGeometry(f__mhz, terminal_1);
+  TerminalGeometry(f__mhz, terminal_1, context->gamma_table.get());
 
   // Step 1 for high terminal
   terminal_2->h_r__km = h_2__meter / 1000;
-  TerminalGeometry(f__mhz, terminal_2);
+  TerminalGeometry(f__mhz, terminal_2, context->gamma_table.get());
 
   //
   // Compute terminal geometries
@@ -212,8 +215,8 @@ static void InitializeTranshorizon(ProfileContext* context) {
   LineOfSightPoint(path, terminal_1, terminal_2, &context->K_LOS_params,
                    context->f__mhz, -context->A_dML__db, context->p,
                    path->d_ML__km - 1, context->T_pol, context->psi_limit,
-                   context->A_d_0__db, &context->los, nullptr, &result_K_LOS,
-                   &context->K_LOS);
+                   context->A_d_0__db, &context->los,
+                   context->gamma_table.get(), &result_K_LOS, &context->K_LOS);
 
   // Step 6.  Search past horizon to find crossover point between Diffraction
   // and Troposcatter models

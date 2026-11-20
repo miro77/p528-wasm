@@ -235,7 +235,7 @@ void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
 
 void GetRayTraceLayers(double f__ghz, double h_1__km, double h_2__km,
     RayTraceConfig config, RayTraceLayers* layers,
-    SpecificAttenuationTable* table = nullptr);
+    SpecificAttenuationTable* table = nullptr, bool exact_refractive_index = false);
 void RayTrace(double h_1__km, double beta_1__rad, const RayTraceLayers& layers,
     SlantPathAttenuationResult* result);
 void RayTraceLoss(double h_1__km, double beta_1__rad, const RayTraceLayers& layers,

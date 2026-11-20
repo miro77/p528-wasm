@@ -420,7 +420,8 @@ void LineOfSightPoint(Path* path, Terminal* terminal_1, Terminal* terminal_2,
       config.dry_pressure = GlobalPressure;
       config.wet_pressure = GlobalWetPressure;
       GetRayTraceLayers(f__mhz / 1000, terminal_1->h_r__km,
-                        terminal_2->h_r__km, config, &shared->layers);
+                        terminal_2->h_r__km, config, &shared->layers,
+                        gamma_table);
     }
     // Only the loss and the ray length are needed below. With a table the
     // caller asked for the fast path, so skip the bending calculation.
