@@ -61,12 +61,22 @@ int rtn = P528_Profile(d__km.data(), (int)d__km.size(), h_1__meter, h_2__meter,
 
 Every point gets the result and return code `P528()` would give for it. `return_codes` may be null; the function's own return value is `SUCCESS`, the first error code, or `SUCCESS_WITH_WARNINGS`.
 
-The function is faster for two reasons:
+The function is faster for these reasons:
 
- * The terminal geometries, the smooth earth diffraction line, the line-of-sight setup, the K-value at the radio horizon and the diffraction/troposcatter crossover are computed once per profile. Line-of-sight rays also share the atmospheric layers between the two terminals. These quantities are identical to those of `P528()`.
- * For rays whose layers change with the distance (beyond the horizon, and downward-looking rays), the specific gaseous attenuation and the refractivity are interpolated versus height from a table that is built on demand for the frequency, instead of being summed line by line for every layer of every ray. The interpolation error is controlled; in the benchmark the results stay within 1e-8 dB of `P528()`.
+ * The terminal geometries, the smooth earth diffraction line, the line-of-sight setup, the K-value at the radio horizon and the diffraction/troposcatter crossover are computed once per profile. The geometry is identical to that of `P528()`, bit for bit: it decides where line-of-sight ends and which steps the searches of the line-of-sight region take.
+ * The specific gaseous attenuation is interpolated versus height from a table that is built on demand for the frequency, instead of being summed line by line for every layer of every ray.
+ * Beyond the horizon the ray to the common volume is interpolated instead of traced. Its loss is not a smooth function of the height of the common volume, because the number of layers changes with it. But for a given layer scale all these rays share their layers, and the scale varies by a few percent only, so the sums up to each layer are tabulated versus the scale.
+ * Upward-looking line-of-sight rays share the layers between the terminals. Their loss and length are interpolated versus the elevation angle.
+ * Downward-looking line-of-sight rays cannot be interpolated: their grazing height is the result of a search with a 1 m stopping criterion, and the loss jumps between its possible values. The search and the rays of each grazing height are remembered instead. The same holds for the search of the reflection angle of a distance.
 
-`P528_Profile()` may be called from several threads at once, each call keeps its own state.
+Every table is verified when it is built, and is only built once enough distances use it. In the benchmark the results stay within 1e-8 dB of `P528()`, with the same propagation mode, warnings and return code for every point.
+
+`P528_Profile()` runs on the calling thread and may be called from several threads at once, each call keeps its own state. For large profiles `P528_ProfileParallel()` takes one more argument, the largest number of threads to use (0: one per processor), and evaluates contiguous ranges of the distances at the same time. It pays off from about 4000 distances; smaller profiles and WebAssembly builds are evaluated on the calling thread.
+
+```cpp
+int rtn = P528_ProfileParallel(d__km.data(), (int)d__km.size(), h_1__meter, h_2__meter,
+                               f__mhz, T_pol, time, results.data(), return_codes.data(), 0);
+```
 
 ### Measuring the Calculation Time
 
@@ -75,6 +85,8 @@ The `P528Bench` executable (CMake option `BUILD_BENCHMARK`, on by default) times
 ```
 P528Bench --points 1000            # P528() per point versus P528_Profile()
 P528Bench --points 100000 --profile-only   # large profiles, P528_Profile() only
+P528Bench --points 100000 --profile-only --threads 0   # P528_ProfileParallel()
+P528Bench --points 2 --profile-only --repeat 5   # the fixed cost of a profile
 P528Bench --points 50 --stages     # additionally time the building blocks
 P528Bench --points 200 --check-reference bench/reference_200.txt
 ```

@@ -79,19 +79,39 @@ struct Comparison {
   int rc_mismatches = 0;         // differing return codes
   int mode_mismatches = 0;       // differing propagation modes
   int warning_mismatches = 0;    // differing warning flags
+  int geometry_mismatches = 0;   // differing elevation angles or distances
 };
 
+/**
+ * Compares two result sets.
+ *
+ * Results of the same build (same_build) also have to agree bit for bit on
+ * the elevation angle and on the distance the result is given for: both come
+ * from the ray optics, which a profile evaluates for the same reflection
+ * angle as P528(). A stored reference may come from another compiler, whose
+ * math library differs in the last bits, and holds the requested distance
+ * instead; there the elevation angle is compared to 1e-9 rad.
+ */
 Comparison Compare(const std::vector<double>& d,
                    const std::vector<Result>& ref,
                    const std::vector<int>& ref_rc,
                    const std::vector<Result>& test,
-                   const std::vector<int>& test_rc) {
+                   const std::vector<int>& test_rc,
+                   bool same_build) {
   Comparison c;
   for (size_t i = 0; i < d.size(); i++) {
     if (ref_rc[i] != test_rc[i]) c.rc_mismatches++;
     if (ref[i].propagation_mode != test[i].propagation_mode)
       c.mode_mismatches++;
     if (ref[i].warnings != test[i].warnings) c.warning_mismatches++;
+    if (same_build) {
+      if (ref[i].theta_h1__rad != test[i].theta_h1__rad ||
+          ref[i].d__km != test[i].d__km)
+        c.geometry_mismatches++;
+    } else if (!(std::fabs(ref[i].theta_h1__rad - test[i].theta_h1__rad) <=
+                 1e-9)) {
+      c.geometry_mismatches++;
+    }
     const double diffs[] = {
         std::fabs(ref[i].A__db - test[i].A__db),
         std::fabs(ref[i].A_fs__db - test[i].A_fs__db),
@@ -371,9 +391,9 @@ int main(int argc, char** argv) {
       continue;
     }
 
-    const Comparison c = Compare(d, ref, ref_rc, prof, prof_rc);
-    const int mismatches =
-        c.rc_mismatches + c.mode_mismatches + c.warning_mismatches;
+    const Comparison c = Compare(d, ref, ref_rc, prof, prof_rc, true);
+    const int mismatches = c.rc_mismatches + c.mode_mismatches +
+                           c.warning_mismatches + c.geometry_mismatches;
     std::printf("%-28s %12.1f %12.1f %8.1fx %12.3g %d\n", s.name, 1e3 * t_ref,
                 1e3 * t_prof, t_ref / t_prof, c.max_abs_diff__db, mismatches);
     if (csv.is_open())
@@ -391,15 +411,17 @@ int main(int argc, char** argv) {
                     "--points or scenarios?)\n", check_path.c_str());
         return 1;
       }
-      const Comparison c_point = Compare(d, stored, stored_rc, ref, ref_rc);
-      const Comparison c_prof = Compare(d, stored, stored_rc, prof, prof_rc);
+      const Comparison c_point =
+          Compare(d, stored, stored_rc, ref, ref_rc, false);
+      const Comparison c_prof =
+          Compare(d, stored, stored_rc, prof, prof_rc, false);
       std::printf("  vs stored reference: point-by-point %.3g dB (at %.3f km),"
                   " profile %.3g dB (at %.3f km)\n",
                   c_point.max_abs_diff__db, c_point.max_abs_diff_d__km,
                   c_prof.max_abs_diff__db, c_prof.max_abs_diff_d__km);
       for (const Comparison* cmp : {&c_point, &c_prof}) {
         total_mismatches += cmp->rc_mismatches + cmp->mode_mismatches +
-                            cmp->warning_mismatches;
+                            cmp->warning_mismatches + cmp->geometry_mismatches;
         if (cmp->max_abs_diff__db > worst_stored_diff ||
             std::isnan(cmp->max_abs_diff__db))
           worst_stored_diff = cmp->max_abs_diff__db;
