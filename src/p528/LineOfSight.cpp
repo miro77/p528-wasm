@@ -5,6 +5,8 @@
 
 #include "p528.h"
 #include "p676.h"
+#include "p835.h"
+#include "ProfileContext.h"
 
 namespace ITS {
 namespace ITU {
@@ -143,8 +145,38 @@ void LineOfSight(Path* path, Terminal* terminal_1, Terminal* terminal_2,
                 LineOfSightParams* los_params, double f__mhz, double A_dML__db,
                 double p, double d__km, int T_pol, Result* result,
                 double* K_LOS) {
+  double psi_limit, A_d_0__db;
+  LineOfSightSetup(path, terminal_1, terminal_2, f__mhz, A_dML__db, T_pol,
+                   &psi_limit, &A_d_0__db);
+
+  RayTraceLayers los_layers;
+  LineOfSightPoint(path, terminal_1, terminal_2, los_params, f__mhz, A_dML__db,
+                   p, d__km, T_pol, psi_limit, A_d_0__db, &los_layers, nullptr,
+                   result, K_LOS);
+}
+
+/**
+ * Distance-independent part of the line-of-sight calculation: determines
+ * psi_limit, the distance d_0 (stored in path) and the loss at d_0. The
+ * results are valid for every distance of a profile.
+ *
+ * @param[in,out] path     Struct containing path parameters, d_0__km is set
+ * @param[in] terminal_1   Struct containing low terminal parameters
+ * @param[in] terminal_2   Struct containing high terminal parameters
+ * @param[in] f__mhz       Frequency, in MHz
+ * @param[in] A_dML__db    Diffraction loss at d_ML, in dB
+ * @param[in] T_pol        Code indicating either polarization
+ * @param[out] psi_limit   Reflection angle where the model switches from free
+ *                         space to the two-ray model, in rad
+ * @param[out] A_d_0__db   Line-of-sight loss at d_0, in dB
+ ******************************************************************************/
+void LineOfSightSetup(Path* path, Terminal* terminal_1, Terminal* terminal_2,
+                      double f__mhz, double A_dML__db, int T_pol,
+                      double* psi_limit_out, double* A_d_0__db) {
   double psi;
   double R_Tg;
+  LineOfSightParams los_params_d0;
+  LineOfSightParams* los_params = &los_params_d0;
 
   // 0.2997925 = speed of light, gigameters per sec
   double lambda__km = 0.2997925 / f__mhz;  // [Eqn 6-1]
@@ -228,22 +260,84 @@ void LineOfSight(Path* path, Terminal* terminal_1, Terminal* terminal_2,
   // Compute loss at d_0__km
   /////////////////////////////////////////////
 
+  *psi_limit_out = psi_limit;
+  *A_d_0__db = los_params->A_LOS__db;
+}
+
+/**
+ * Distance-dependent part of the line-of-sight calculation.
+ *
+ * @param[in] path        Struct containing path parameters
+ * @param[in] terminal_1  Struct containing low terminal parameters
+ * @param[in] terminal_2  Struct containing high terminal parameters
+ * @param[in] f__mhz      Frequency, in MHz
+ * @param[in] A_dML__db   Diffraction loss at d_ML, in dB
+ * @param[in] p           Time percentage
+ * @param[in] d__km       %Path length, in km
+ * @param[in] T_pol       Code indicating either polarization
+ * @param[in] psi_limit   Result of LineOfSightSetup()
+ * @param[in] A_d_0__db   Result of LineOfSightSetup()
+ * @param[in,out] los_layers  Atmospheric layers between the terminals. They
+ *                            are computed on first use and then reused for
+ *                            every further distance.
+ * @param[in,out] gamma_table  Optional attenuation table for the frequency,
+ *                             used for rays that cannot share los_layers
+ * @param[out] los_params  Struct containing LOS parameters
+ * @param[out] result      Struct containing P.528 results
+ * @param[out] K_LOS       K-value
+ ******************************************************************************/
+void LineOfSightPoint(Path* path, Terminal* terminal_1, Terminal* terminal_2,
+                      LineOfSightParams* los_params, double f__mhz,
+                      double A_dML__db, double p, double d__km, int T_pol,
+                      double psi_limit, double A_d_0__db,
+                      RayTraceLayers* los_layers,
+                      SpecificAttenuationTable* gamma_table, Result* result,
+                      double* K_LOS) {
+  double psi;
+  double R_Tg;
+
+  // 0.2997925 = speed of light, gigameters per sec
+  double lambda__km = 0.2997925 / f__mhz;  // [Eqn 6-1]
+
   // tune psi for the desired distance
   psi = FindPsiAtDistance(d__km, terminal_1, terminal_2);
 
   RayOptics(terminal_1, terminal_2, psi, los_params);
 
-  GetPathLoss(psi, path, f__mhz, psi_limit, A_dML__db, los_params->A_LOS__db,
-              T_pol, los_params, &R_Tg);
+  GetPathLoss(psi, path, f__mhz, psi_limit, A_dML__db, A_d_0__db, T_pol,
+              los_params, &R_Tg);
 
   /////////////////////////////////////////////
   // Compute atmospheric absorption
   //
-  
+
   SlantPathAttenuationResult result_slant;
-  SlantPathAttenuation(
-      f__mhz / 1000, terminal_1->h_r__km, terminal_2->h_r__km,
-      PI / 2 - los_params->theta_h1__rad, &result_slant);
+  double beta_1__rad = PI / 2 - los_params->theta_h1__rad;
+  if (beta_1__rad > PI / 2) {
+    // The ray first descends to a grazing height that depends on the
+    // distance, so the layers differ from point to point.
+    SlantPathAttenuation(f__mhz / 1000, terminal_1->h_r__km,
+                         terminal_2->h_r__km, beta_1__rad, &result_slant,
+                         gamma_table);
+  } else {
+    // Every ray runs between the same two heights: the layer properties
+    // (the expensive part) are shared, only the ray geometry is traced.
+    if (!los_layers->ready) {
+      RayTraceConfig config;
+      config.temperature = GlobalTemperature;
+      config.dry_pressure = GlobalPressure;
+      config.wet_pressure = GlobalWetPressure;
+      GetRayTraceLayers(f__mhz / 1000, terminal_1->h_r__km,
+                        terminal_2->h_r__km, config, los_layers);
+    }
+    // Only the loss and the ray length are needed below. With a table the
+    // caller asked for the fast path, so skip the bending calculation.
+    if (gamma_table)
+      RayTraceLoss(terminal_1->h_r__km, beta_1__rad, *los_layers,
+                   &result_slant);
+    else
+      RayTrace(terminal_1->h_r__km, beta_1__rad, *los_layers, &result_slant);
+  }
 
   result->A_a__db = result_slant.A_gas__db;
 

@@ -8,7 +8,7 @@ namespace PSeries {
 namespace p528 {
 
 int SlantPathAttenuation(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
-    SlantPathAttenuationResult* result)
+    SlantPathAttenuationResult* result, SpecificAttenuationTable* table)
 {
     RayTraceConfig config;
     config.temperature = GlobalTemperature;
@@ -60,8 +60,8 @@ int SlantPathAttenuation(double f__ghz, double h_1__km, double h_2__km, double b
         // converged on h_G.  Now call RayTrace in both directions with grazing angle
         SlantPathAttenuationResult result_1, result_2;
         double beta_graze__rad = PI / 2;
-        RayTrace(f__ghz, h_G__km, h_1__km, beta_graze__rad, config, &result_1);
-        RayTrace(f__ghz, h_G__km, h_2__km, beta_graze__rad, config, &result_2);
+        RayTrace(f__ghz, h_G__km, h_1__km, beta_graze__rad, config, &result_1, table);
+        RayTrace(f__ghz, h_G__km, h_2__km, beta_graze__rad, config, &result_2, table);
 
         result->angle__rad = result_2.angle__rad;
         result->A_gas__db = result_1.A_gas__db + result_2.A_gas__db;
@@ -71,7 +71,7 @@ int SlantPathAttenuation(double f__ghz, double h_1__km, double h_2__km, double b
     }
     else
     {
-        RayTrace(f__ghz, h_1__km, h_2__km, beta_1__rad, config, result);
+        RayTrace(f__ghz, h_1__km, h_2__km, beta_1__rad, config, result, table);
     }
 
     return 0;

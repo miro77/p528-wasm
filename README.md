@@ -46,6 +46,41 @@ The below table includes a select set of example inputs and outputs for testing 
 |   1 500 |           15 |       10 000 |    5 700 |       0 |     10 |   293.4 |
 |      30 |            8 |       20 000 |   22 000 |       1 |     50 |   151.1 |
 
+## Profiles: Many Distances at Once ##
+
+`P528()` spends almost all of its time on quantities that do not depend on the path distance, above all on the atmospheric ray traces of Recommendation ITU-R P.676. When the loss is needed for many distances that share the terminal heights, frequency, polarization and time percentage (the points of a profile), use `P528_Profile()` instead of calling `P528()` per point:
+
+```cpp
+std::vector<double> d__km = { /* distances along the profile, in any order */ };
+std::vector<Result> results(d__km.size());
+std::vector<int> return_codes(d__km.size());
+
+int rtn = P528_Profile(d__km.data(), (int)d__km.size(), h_1__meter, h_2__meter,
+                       f__mhz, T_pol, time, results.data(), return_codes.data());
+```
+
+Every point gets the result and return code `P528()` would give for it. `return_codes` may be null; the function's own return value is `SUCCESS`, the first error code, or `SUCCESS_WITH_WARNINGS`.
+
+The function is faster for two reasons:
+
+ * The terminal geometries, the smooth earth diffraction line, the line-of-sight setup, the K-value at the radio horizon and the diffraction/troposcatter crossover are computed once per profile. Line-of-sight rays also share the atmospheric layers between the two terminals. These quantities are identical to those of `P528()`.
+ * For rays whose layers change with the distance (beyond the horizon, and downward-looking rays), the specific gaseous attenuation and the refractivity are interpolated versus height from a table that is built on demand for the frequency, instead of being summed line by line for every layer of every ray. The interpolation error is controlled; in the benchmark the results stay within 1e-8 dB of `P528()`.
+
+`P528_Profile()` may be called from several threads at once, each call keeps its own state.
+
+### Measuring the Calculation Time
+
+The `P528Bench` executable (CMake option `BUILD_BENCHMARK`, on by default) times a profile for several scenarios with both functions and compares the results:
+
+```
+P528Bench --points 1000            # P528() per point versus P528_Profile()
+P528Bench --points 100000 --profile-only   # large profiles, P528_Profile() only
+P528Bench --points 50 --stages     # additionally time the building blocks
+P528Bench --points 200 --check-reference bench/reference_200.txt
+```
+
+It exits with a non-zero code if the two functions differ by more than 1e-6 dB, or disagree on a propagation mode, warning or return code. `bench/reference_200.txt` holds the results of `P528()` from before `P528_Profile()` was added; checking against it is part of the test suite and guards changes that affect both functions. Use `--save-reference` to store new reference results, and `--csv` to log timings.
+
 ## Notes on Code Style ##
 
  * In general, variables follow the naming convention in which a single underscore denotes a subscript (pseudo-LaTeX format), where a double underscore is followed by the units, i.e. h_1__meter.

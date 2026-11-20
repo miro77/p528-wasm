@@ -91,6 +91,7 @@ option(RUN_DRIVER_TESTS "Test the command-line driver executable" ON)
 option(DOCS_ONLY "Skip all steps except generating the documentation site" OFF)
 option(RUN_TESTS "Run unit tests for the main library" ON)
 option(BUILD_32BIT "Build project for x86/32-bit instead of x64/64-bit" OFF)
+option(BUILD_BENCHMARK "Build the profile benchmark executable" ON)
 
 ###########################################
 ## SETUP
@@ -205,6 +206,9 @@ if (NOT DOCS_ONLY)
     endif ()
     if (BUILD_DRIVER OR RUN_DRIVER_TESTS)
         add_subdirectory(app)
+    endif ()
+    if (BUILD_BENCHMARK)   # Build the profile benchmark
+        add_subdirectory(bench)
     endif ()
 endif ()
 

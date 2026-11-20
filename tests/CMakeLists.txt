@@ -10,6 +10,7 @@ add_executable(
     P528GTestUtils.cpp
     TestP528.cpp
     TestP528DataTables.cpp
+    TestP528Profile.cpp
 )
 
 
@@ -21,8 +22,9 @@ configure_proplib_target(${TEST_NAME})
 ###########################################
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
-# Explicitly link the filesystem flag
-target_link_libraries(${TEST_NAME} ${LIB_NAME} GTest::gtest_main stdc++fs) 
+# Explicitly link the filesystem library (only exists/needed for GCC's libstdc++)
+target_link_libraries(${TEST_NAME} ${LIB_NAME} GTest::gtest_main
+    "$<$<CXX_COMPILER_ID:GNU>:stdc++fs>")
 include(GoogleTest)
 gtest_discover_tests(${TEST_NAME})
 

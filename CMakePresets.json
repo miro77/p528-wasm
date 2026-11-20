@@ -167,12 +167,14 @@
             "name": "proplib-test-debug-base",
             "hidden": true,
             "inherits": "proplib-test-base",
+            "configuration": "Debug",
             "description": "Base 'Debug' test preset for ITS PropLib libraries"
         },
         {
             "name": "proplib-test-release-base",
             "hidden": true,
             "inherits": "proplib-test-base",
+            "configuration": "Release",
             "description": "Base 'Release' test preset for ITS PropLib libraries"
         },
         {

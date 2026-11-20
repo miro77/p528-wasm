@@ -37,6 +37,54 @@ struct RayTraceConfig
     WetPressure wet_pressure;
 };
 
+/** Layers of a ray trace between two heights. They do not depend on the
+ *  elevation angle, so rays between the same two heights can share them. */
+struct RayTraceLayers
+{
+    bool ready = false;                     // true once the layers are computed
+    int i_lower = 0;                        // Index of the lowest layer
+    int i_upper = 0;                        // Index of the highest layer
+    double m = 0;                           // Layer thickness scale factor
+    vector<double> n;                       // Refractive index per layer
+    vector<double> gamma;                   // Specific attenuation per layer, in dB/km
+};
+
+/** Specific gaseous attenuation and refractive index versus height for one
+ *  frequency, see SpecificAttenuationTable.cpp. Not thread safe: it is filled
+ *  on first use. */
+class SpecificAttenuationTable
+{
+public:
+    static const int DEGREE = 12;           // Degree of the interpolation per segment
+
+    SpecificAttenuationTable(double f__ghz, RayTraceConfig config);
+    SpecificAttenuationTable(const SpecificAttenuationTable&) = delete;
+    SpecificAttenuationTable& operator=(const SpecificAttenuationTable&) = delete;
+
+    void Lookup(double h__km, double* n, double* gamma);
+
+private:
+    struct Segment
+    {
+        double lo__km;                      // Lower height of the segment, in km
+        double hi__km;                      // Upper height of the segment, in km
+        double mid__km;                     // Center of the segment, in km
+        double scale;                       // Maps heights to [-1, 1]
+        double c_gamma[DEGREE + 1];         // Chebyshev coefficients, specific attenuation
+        double c_n[DEGREE + 1];             // Chebyshev coefficients, refractive index - 1
+    };
+
+    void Exact(double h__km, double* n_minus_1, double* gamma) const;
+    const Segment* FindSegment(double h__km);
+    void Fit(double lo__km, double hi__km, vector<Segment>* segments);
+
+    double f__ghz_;
+    RayTraceConfig config_;
+    vector<double> edges_;                  // Cell boundaries, in km
+    vector<vector<Segment>> cells_;         // Segments per cell, empty until first use
+    const Segment* last_ = nullptr;         // Segment of the previous lookup
+};
+
 class OxygenData
 {
 public:
@@ -64,6 +112,7 @@ public:
 double LineShapeFactor(double f__ghz, double f_i__ghz, double delta_f__ghz, double delta);
 double NonresonantDebyeAttenuation(double f__ghz, double e__hPa, double p__hPa, double theta);
 double RefractiveIndex(double p__hPa, double T__kelvin, double e__hPa);
+double RefractiveIndexMinusOne(double p__hPa, double T__kelvin, double e__hPa);
 void GetLayerProperties(double f__ghz, double h_i__km, RayTraceConfig config,
     double* n, double* gamma);
 
@@ -75,10 +124,18 @@ double WaterVapourSpecificAttenuation(double f__ghz, double T__kelvin, double e_
 double WaterVapourDensityToPartialPressure(double rho__g_m3, double T__kelvin);
 
 void RayTrace(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
-    RayTraceConfig config, SlantPathAttenuationResult* result);
+    RayTraceConfig config, SlantPathAttenuationResult* result,
+    SpecificAttenuationTable* table = nullptr);
 
-int SlantPathAttenuation(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
+void GetRayTraceLayers(double f__ghz, double h_1__km, double h_2__km,
+    RayTraceConfig config, RayTraceLayers* layers,
+    SpecificAttenuationTable* table = nullptr);
+void RayTrace(double h_1__km, double beta_1__rad, const RayTraceLayers& layers,
     SlantPathAttenuationResult* result);
+void RayTraceLoss(double h_1__km, double beta_1__rad, const RayTraceLayers& layers,
+    SlantPathAttenuationResult* result);
+int SlantPathAttenuation(double f__ghz, double h_1__km, double h_2__km, double beta_1__rad,
+    SlantPathAttenuationResult* result, SpecificAttenuationTable* table = nullptr);
 
 double GlobalWetPressure(double h__km);
 } // namespace p528

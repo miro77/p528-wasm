@@ -7,6 +7,7 @@
 #include <math.h>
 
 #include "p676.h"
+#include "ProfileContext.h"
 
 namespace ITS {
 namespace ITU {
@@ -98,6 +99,46 @@ int P528_Ex(double d__km, double h_1__meter, double h_2__meter, double f__mhz,
       return err;
   }
 
+  // Steps 1-3 and everything else that does not depend on the distance
+  ProfileContext context;
+  InitializeProfileContext(h_1__meter, h_2__meter, f__mhz, T_pol, p, &context);
+
+  // Steps 4-7 for the requested distance
+  EvaluateProfilePoint(&context, d__km, result, tropo, los_params);
+
+  *terminal_1 = context.terminal_1;
+  *terminal_2 = context.terminal_2;
+  *path = context.path;
+
+  if (result->warnings == WARNING__NO_WARNINGS)
+    return SUCCESS;
+  else
+    return SUCCESS_WITH_WARNINGS;
+}
+
+/**
+ * Computes everything that does not depend on the path distance: the terminal
+ * geometries, the smooth earth diffraction line and the line-of-sight setup.
+ * The inputs must have passed ValidateInputs().
+ *
+ * @param[in]  h_1__meter  Height of the low terminal, in meters
+ * @param[in]  h_2__meter  Height of the high terminal, in meters
+ * @param[in]  f__mhz      Frequency, in MHz
+ * @param[in]  T_pol       Polarization type
+ * @param[in]  p           Time percentage
+ * @param[out] context     Distance-independent state
+ ****************************************************************************/
+void InitializeProfileContext(double h_1__meter, double h_2__meter,
+                              double f__mhz, int T_pol, double p,
+                              ProfileContext* context) {
+  Terminal* terminal_1 = &context->terminal_1;
+  Terminal* terminal_2 = &context->terminal_2;
+  Path* path = &context->path;
+
+  context->f__mhz = f__mhz;
+  context->T_pol = T_pol;
+  context->p = p;
+
   /////////////////////////////////////////////
   // Compute terminal geometries
   //
@@ -141,32 +182,94 @@ int P528_Ex(double d__km, double h_1__meter, double h_2__meter, double f__mhz,
   double A_dML__db = (M_d * path->d_ML__km) + A_d0;  // [Eqn 3-6]
   path->d_d__km = -(A_d0 / M_d);                     // [Eqn 3-7]
 
+  context->M_d = M_d;
+  context->A_d0 = A_d0;
+  context->A_dML__db = A_dML__db;
+
   //
   // End smooth earth diffraction line calculations
   /////////////////////////////////////////////////
 
-  double K_LOS = 0;
+  // Line-of-sight quantities shared by all distances. They are also needed
+  // beyond the horizon, to get K_LOS.
+  LineOfSightSetup(path, terminal_1, terminal_2, f__mhz, -A_dML__db, T_pol,
+                   &context->psi_limit, &context->A_d_0__db);
+}
+
+/**
+ * Computes the distance-independent quantities of the transhorizon region:
+ * K_LOS and the crossover between the diffraction and troposcatter models.
+ *
+ * @param[in,out] context  Distance-independent state
+ ****************************************************************************/
+static void InitializeTranshorizon(ProfileContext* context) {
+  Path* path = &context->path;
+  Terminal* terminal_1 = &context->terminal_1;
+  Terminal* terminal_2 = &context->terminal_2;
+
+  // get K_LOS
+  Result result_K_LOS;
+  LineOfSightPoint(path, terminal_1, terminal_2, &context->K_LOS_params,
+                   context->f__mhz, -context->A_dML__db, context->p,
+                   path->d_ML__km - 1, context->T_pol, context->psi_limit,
+                   context->A_d_0__db, &context->los_layers, nullptr,
+                   &result_K_LOS, &context->K_LOS);
+
+  // Step 6.  Search past horizon to find crossover point between Diffraction
+  // and Troposcatter models
+  context->M_d_trans = context->M_d;
+  context->A_d0_trans = context->A_d0;
+  context->transhorizon_warnings = WARNING__NO_WARNINGS;
+  TranshorizonSearch(path, terminal_1, terminal_2, context->f__mhz,
+                     context->A_dML__db, &context->M_d_trans,
+                     &context->A_d0_trans, &context->d_crx__km, &context->CASE,
+                     &context->transhorizon_warnings);
+
+  context->transhorizon_ready = true;
+}
+
+/**
+ * Computes the basic transmission loss for one distance, reusing the
+ * distance-independent state of the profile (Steps 4-7).
+ *
+ * @param[in,out] context   Distance-independent state
+ * @param[in]  d__km        %Path distance, in km
+ * @param[in,out] result    Result structure. result->warnings must hold the
+ *                          warnings of ValidateInputs() on entry.
+ * @param[out] tropo        Structure containing troposcatter parameters
+ * @param[out] los_params   Structure containing line of sight parameters
+ ****************************************************************************/
+void EvaluateProfilePoint(ProfileContext* context, double d__km,
+                          Result* result, TroposcatterParams* tropo,
+                          LineOfSightParams* los_params) {
+  Path* path = &context->path;
+  Terminal* terminal_1 = &context->terminal_1;
+  Terminal* terminal_2 = &context->terminal_2;
+  const double f__mhz = context->f__mhz;
+  const double p = context->p;
 
   // Step 4.  If the path is in the Line-of-Sight range, call LOS and then exit
   if (path->d_ML__km - d__km > 0.001) {
+    double K_LOS = 0;
     result->propagation_mode = PROP_MODE__LOS;
-    LineOfSight(path, terminal_1, terminal_2, los_params, f__mhz,
-                -A_dML__db, p, d__km, T_pol, result, &K_LOS);
-    if (result->warnings == WARNING__NO_WARNINGS)
-      return SUCCESS;
-    else
-      return SUCCESS_WITH_WARNINGS;
+    LineOfSightPoint(path, terminal_1, terminal_2, los_params, f__mhz,
+                     -context->A_dML__db, p, d__km, context->T_pol,
+                     context->psi_limit, context->A_d_0__db,
+                     &context->los_layers, context->gamma_table.get(), result,
+                     &K_LOS);
+    return;
   } else {
-    // get K_LOS
-    LineOfSight(path, terminal_1, terminal_2, los_params, f__mhz,
-                -A_dML__db, p, path->d_ML__km - 1, T_pol, result, &K_LOS);
+    // K_LOS and the crossover search are the same for every distance
+    if (!context->transhorizon_ready) InitializeTranshorizon(context);
 
-    // Step 6.  Search past horizon to find crossover point between Diffraction
-    // and Troposcatter models
-    int CASE;
-    double d_crx__km;
-    TranshorizonSearch(path, terminal_1, terminal_2, f__mhz, A_dML__db, &M_d,
-                       &A_d0, &d_crx__km, &CASE, &result->warnings);
+    *los_params = context->K_LOS_params;
+    result->warnings |= context->transhorizon_warnings;
+
+    const double K_LOS = context->K_LOS;
+    const double M_d = context->M_d_trans;
+    const double A_d0 = context->A_d0_trans;
+    const double d_crx__km = context->d_crx__km;
+    const int CASE = context->CASE;
 
     /////////////////////////////////////////////
     // Compute terrain attenuation, A_T__db
@@ -244,7 +347,8 @@ int P528_Ex(double d__km, double h_1__meter, double h_2__meter, double f__mhz,
     // Atmospheric absorption for transhorizon path
     //
     SlantPathAttenuationResult result_v;
-    SlantPathAttenuation(f__mhz / 1000, 0, tropo->h_v__km, PI / 2, &result_v);
+    SlantPathAttenuation(f__mhz / 1000, 0, tropo->h_v__km, PI / 2, &result_v,
+                         context->gamma_table.get());
 
     result->A_a__db = terminal_1->A_a__db + terminal_2->A_a__db +
                       2 * result_v.A_gas__db;  // [Eqn 3-17]
@@ -270,11 +374,6 @@ int P528_Ex(double d__km, double h_1__meter, double h_2__meter, double f__mhz,
     result->A__db = result->A_fs__db + result->A_a__db + A_T__db -
                     Y_total__db;  // [Eqn 3-20]
     result->theta_h1__rad = -terminal_1->theta__rad;
-
-    if (result->warnings == WARNING__NO_WARNINGS)
-      return SUCCESS;
-    else
-      return SUCCESS_WITH_WARNINGS;
   }
 }
 
