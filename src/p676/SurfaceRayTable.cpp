@@ -142,7 +142,7 @@ void SurfaceRayTable::LayerTerms(int i, double m, double n_1, double* a_i__km, d
     // Equations 19b and 17
     double sin_beta_i = MIN(1, (n_1 * r_1__km) / (n_i * r_i__km) * sin_beta_1);
     double cos_beta_i = sqrt((1 - sin_beta_i) * (1 + sin_beta_i));
-    *a_i__km = -r_i__km * cos_beta_i + sqrt(pow(r_i__km, 2) * pow(cos_beta_i, 2) + 2 * r_i__km * delta_i__km + pow(delta_i__km, 2));
+    *a_i__km = -r_i__km * cos_beta_i + sqrt((r_i__km * r_i__km) * (cos_beta_i * cos_beta_i) + 2 * r_i__km * delta_i__km + delta_i__km * delta_i__km);
     *A_i__db = *a_i__km * gamma_i;
 }
 

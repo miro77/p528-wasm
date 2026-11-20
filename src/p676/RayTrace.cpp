@@ -199,11 +199,13 @@ void RayTraceLoss(double h_1__km, double beta_1__rad, const RayTraceLayers& laye
     const double r_1__km = r_i__km;
     const double n_1 = n_i;
     const double sin_beta_1 = sin(beta_1__rad);
+    const double exp_lower = LayerExp(i_lower - 1);
+    const double exp_step = LayerExp(1) - 1;
 
     // summation from Equation 13
     for (int i = i_lower; i <= i_upper - 1; i++)
     {
-        double h_ii__km = h_1__km + m * ((LayerExp(i + 1 - 1) - LayerExp(i_lower - 1)) / (LayerExp(1) - 1));
+        double h_ii__km = h_1__km + m * ((LayerExp(i + 1 - 1) - exp_lower) / exp_step);
         double r_ii__km = a_0__km + h_ii__km;
         double delta_i__km = LayerThickness(m, i);
 
@@ -212,8 +214,10 @@ void RayTraceLoss(double h_1__km, double beta_1__rad, const RayTraceLayers& laye
         double sin_beta_i = MIN(1, (n_1 * r_1__km) / (n_i * r_i__km) * sin_beta_1);
         double cos_beta_i = sqrt((1 - sin_beta_i) * (1 + sin_beta_i));
 
-        // path length through ith layer, Equation 17
-        double a_i__km = -r_i__km * cos_beta_i + sqrt(pow(r_i__km, 2) * pow(cos_beta_i, 2) + 2 * r_i__km * delta_i__km + pow(delta_i__km, 2));
+        // Path length through ith layer, Equation 17. The squares are
+        // written as products: not every compiler turns pow(x, 2) into one,
+        // and a call of pow() per square dominates this loop.
+        double a_i__km = -r_i__km * cos_beta_i + sqrt((r_i__km * r_i__km) * (cos_beta_i * cos_beta_i) + 2 * r_i__km * delta_i__km + delta_i__km * delta_i__km);
 
         result->a__km += a_i__km;
         result->A_gas__db += a_i__km * gamma_i;
