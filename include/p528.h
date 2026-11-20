@@ -546,6 +546,18 @@ PROPLIB_API int P528_Profile(
     Result* results,
     int* return_codes);
 
+PROPLIB_API int P528_ProfileParallel(
+    const double* d__km,
+    int n_points,
+    double h_1__meter,
+    double h_2__meter,
+    double f__mhz,
+    int T_pol,
+    double p,
+    Result* results,
+    int* return_codes,
+    int max_threads);
+
 PROPLIB_API double FindKForYpiAt99Percent(double Y_pi_99__db);
 
 PROPLIB_API double NakagamiRice(double K, double q);

@@ -12,7 +12,7 @@
  * point-by-point code path (where comparing the two APIs proves nothing).
  *
  * Usage: P528Bench [--points N] [--repeat R] [--csv FILE] [--stages]
- *                  [--profile-only]
+ *                  [--profile-only] [--threads T]
  *                  [--save-reference FILE] [--check-reference FILE]
  */
 #include <chrono>
@@ -258,6 +258,7 @@ int main(int argc, char** argv) {
   int repeat = 1;
   bool stages = false;
   bool profile_only = false;
+  int threads = 1;
   std::string csv_path, save_path, check_path;
 
   for (int i = 1; i < argc; i++) {
@@ -273,12 +274,14 @@ int main(int argc, char** argv) {
       check_path = argv[++i];
     else if (!std::strcmp(argv[i], "--profile-only"))
       profile_only = true;
+    else if (!std::strcmp(argv[i], "--threads") && i + 1 < argc)
+      threads = std::atoi(argv[++i]);
     else if (!std::strcmp(argv[i], "--stages"))
       stages = true;
     else {
       std::printf(
           "Usage: %s [--points N] [--repeat R] [--csv FILE] [--stages]\n"
-          "          [--profile-only]\n"
+          "          [--profile-only] [--threads T]\n"
           "          [--save-reference FILE] [--check-reference FILE]\n"
           "  --points N  number of profile points per scenario (default 2000)\n"
           "  --repeat R  repetitions, the fastest run is reported (default 1)\n"
@@ -286,6 +289,8 @@ int main(int argc, char** argv) {
           "  --stages    also time the building blocks of a single call\n"
           "  --profile-only  skip the slow point-by-point run, for timing\n"
           "                  large profiles (no comparison of the two APIs)\n"
+          "  --threads T  time P528_ProfileParallel() with up to T threads\n"
+          "               instead of P528_Profile() (0: one per processor)\n"
           "  --save-reference FILE   store the point-by-point results\n"
           "  --check-reference FILE  compare both APIs against stored results\n"
           "                          (needs the same --points as when saved)\n",
@@ -302,8 +307,10 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  std::printf("P.528 profile benchmark: %d points per scenario, best of %d\n\n",
+  std::printf("P.528 profile benchmark: %d points per scenario, best of %d",
               n_points, repeat);
+  if (threads != 1) std::printf(", up to %d threads (0: all)", threads);
+  std::printf("\n\n");
   std::printf("%-28s %12s %12s %9s %12s %s\n", "scenario", "point [ms]",
               "profile [ms]", "speed-up", "max diff[dB]", "mismatches");
 
@@ -347,8 +354,13 @@ int main(int argc, char** argv) {
       }
 
       start = Clock::now();
-      P528_Profile(d.data(), n_points, s.h_1__meter, s.h_2__meter, s.f__mhz,
-                   s.T_pol, s.p, prof.data(), prof_rc.data());
+      if (threads == 1)
+        P528_Profile(d.data(), n_points, s.h_1__meter, s.h_2__meter, s.f__mhz,
+                     s.T_pol, s.p, prof.data(), prof_rc.data());
+      else
+        P528_ProfileParallel(d.data(), n_points, s.h_1__meter, s.h_2__meter,
+                             s.f__mhz, s.T_pol, s.p, prof.data(),
+                             prof_rc.data(), threads);
       t_prof = std::fmin(t_prof, SecondsSince(start));
     }
 

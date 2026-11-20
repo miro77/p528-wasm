@@ -61,6 +61,10 @@ else ()
     add_library(${LIB_NAME} ${LIB_FILES})
 endif ()
 
+# P528_ProfileParallel() starts threads
+find_package(Threads REQUIRED)
+target_link_libraries(${LIB_NAME} PRIVATE Threads::Threads)
+
 # Add the include directory
 target_include_directories(${LIB_NAME} PUBLIC "${LIB_HEADERS}")
     # "${PROJECT_SOURCE_DIR}/extern/p676/include")

@@ -146,6 +146,55 @@ TEST_F(TestP528Profile, EmptyProfile) {
         nullptr, nullptr), SUCCESS);
 }
 
+TEST_F(TestP528Profile, DenseProfileMatchesPointwise) {
+    // Tables are only built where enough distances share them. So take many
+    // distances from three narrow ranges: upward and downward-looking rays
+    // within line-of-sight, and beyond the horizon (which is at 580 km).
+    std::vector<double> d;
+    for (int i = 0; i < 60; i++) {
+        d.push_back(200 + 0.5 * i);
+        d.push_back(560 + 0.25 * i);
+        d.push_back(700 + 2.0 * i);
+    }
+    ExpectProfileMatchesPointwise(d, 1000, 12000, 5100, POLARIZATION__HORIZONTAL, 5);
+}
+
+TEST_F(TestP528Profile, ParallelMatchesSerial) {
+    // enough distances for four threads, with an invalid one in the third range
+    std::vector<double> d = MakeDistances(1200, 10000);
+    d[6000] = -1;
+    std::vector<Result> serial(d.size()), parallel(d.size());
+    std::vector<int> serial_rc(d.size()), parallel_rc(d.size());
+
+    int rtn_serial = P528_Profile(d.data(), static_cast<int>(d.size()), 1000, 25000, 5100,
+        POLARIZATION__VERTICAL, 5, serial.data(), serial_rc.data());
+    int rtn_parallel = P528_ProfileParallel(d.data(), static_cast<int>(d.size()), 1000, 25000, 5100,
+        POLARIZATION__VERTICAL, 5, parallel.data(), parallel_rc.data(), 4);
+
+    EXPECT_EQ(rtn_serial, ERROR_VALIDATION__D_KM);
+    EXPECT_EQ(rtn_parallel, rtn_serial);
+    for (size_t i = 0; i < d.size(); i++) {
+        SCOPED_TRACE("d__km = " + std::to_string(d[i]));
+        ASSERT_EQ(parallel_rc[i], serial_rc[i]);
+        ASSERT_EQ(parallel[i].propagation_mode, serial[i].propagation_mode);
+        ASSERT_EQ(parallel[i].warnings, serial[i].warnings);
+        // the ranges of the threads build their own tables
+        ASSERT_NEAR(parallel[i].A__db, serial[i].A__db, 1e-7);
+        ASSERT_NEAR(parallel[i].A_fs__db, serial[i].A_fs__db, 1e-7);
+        ASSERT_NEAR(parallel[i].A_a__db, serial[i].A_a__db, 1e-7);
+        ASSERT_EQ(parallel[i].d__km, serial[i].d__km);
+        ASSERT_EQ(parallel[i].theta_h1__rad, serial[i].theta_h1__rad);
+    }
+
+    // return codes stay optional, and small profiles are not split
+    EXPECT_EQ(P528_ProfileParallel(d.data(), static_cast<int>(d.size()), 1000, 25000, 5100,
+        POLARIZATION__VERTICAL, 5, parallel.data(), nullptr, 0), rtn_serial);
+    EXPECT_EQ(P528_ProfileParallel(d.data(), 10, 1000, 25000, 5100,
+        POLARIZATION__VERTICAL, 5, parallel.data(), parallel_rc.data(), 4), SUCCESS_WITH_WARNINGS);
+    EXPECT_EQ(P528_ProfileParallel(nullptr, 0, 10, 1000, 1200, POLARIZATION__HORIZONTAL, 50,
+        nullptr, nullptr, 4), SUCCESS);
+}
+
 /*=============================================================================
  |
  |  Description:  Tests for the search of the reflection angle that
