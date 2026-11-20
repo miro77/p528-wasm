@@ -2,6 +2,7 @@
 #include "p528.h"
 #include "p676.h"
 #include "p835.h"
+#include "../src/p528/ProfileContext.h"
 
 #include <cmath>
 #include <vector>
@@ -143,6 +144,60 @@ TEST_F(TestP528Profile, WarningsAreSummarized) {
 TEST_F(TestP528Profile, EmptyProfile) {
     EXPECT_EQ(P528_Profile(nullptr, 0, 10, 1000, 1200, POLARIZATION__HORIZONTAL, 50,
         nullptr, nullptr), SUCCESS);
+}
+
+/*=============================================================================
+ |
+ |  Description:  Tests for the search of the reflection angle that
+ |                P528_Profile() uses. It has to end at exactly the angle
+ |                FindPsiAtDistance() finds: the search stops within 1 m of
+ |                the distance, so another angle would be another result.
+ |
+ *===========================================================================*/
+class TestPsiSearch : public ::testing::Test {
+protected:
+    void SetTerminals(double h_1__meter, double h_2__meter, double f__mhz) {
+        terminal_1.h_r__km = h_1__meter / 1000;
+        terminal_2.h_r__km = h_2__meter / 1000;
+        TerminalGeometry(f__mhz, &terminal_1);
+        TerminalGeometry(f__mhz, &terminal_2);
+    }
+
+    Terminal terminal_1;
+    Terminal terminal_2;
+};
+
+TEST_F(TestPsiSearch, DistanceEqualsRayOptics) {
+    for (double h_2__meter : { 30.0, 1000.0, 20000.0 }) {
+        SetTerminals(5, h_2__meter, 1200);
+        // angles from grazing to vertical, dense near grazing
+        for (int i = 0; i < 20000; i++) {
+            double psi = (PI / 2) * pow((i + 0.5) / 20000, 3);
+            LineOfSightParams params;
+            RayOptics(&terminal_1, &terminal_2, psi, &params);
+            ASSERT_EQ(RayOpticsDistance(&terminal_1, &terminal_2, psi), params.d__km)
+                << "psi = " << psi;
+        }
+    }
+}
+
+TEST_F(TestPsiSearch, FindsTheAngleOfFindPsiAtDistance) {
+    SetTerminals(1000, 12000, 5100);
+    double d_ML__km = terminal_1.d_r__km + terminal_2.d_r__km;
+
+    PsiSearchTree tree;
+    // distances in an arbitrary order, twice: the second pass only reads the tree
+    for (int repeat = 0; repeat < 2; repeat++) {
+        for (int i = 0; i < 3000; i++) {
+            double d__km = d_ML__km * ((i * 7919) % 3000) / 3000.0;
+            ASSERT_EQ(FindPsiAtDistance(d__km, &terminal_1, &terminal_2, &tree),
+                FindPsiAtDistance(d__km, &terminal_1, &terminal_2)) << "d__km = " << d__km;
+        }
+    }
+    // beyond the horizon the search does not converge, it ends at its smallest step
+    EXPECT_EQ(FindPsiAtDistance(d_ML__km + 10, &terminal_1, &terminal_2, &tree),
+        FindPsiAtDistance(d_ML__km + 10, &terminal_1, &terminal_2));
+    EXPECT_LE(tree.nodes.size(), PsiSearchTree::MAX_NODES);
 }
 
 /*=============================================================================

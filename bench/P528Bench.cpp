@@ -29,17 +29,8 @@
 #include "p676.h"
 #include "p835.h"
 
-namespace ITS {
-namespace ITU {
-namespace PSeries {
-namespace p528 {
-// internal function of LineOfSight.cpp, only needed for the stage breakdown
-double FindPsiAtDistance(double d__km, Terminal* terminal_1,
-                         Terminal* terminal_2);
-}  // namespace p528
-}  // namespace PSeries
-}  // namespace ITU
-}  // namespace ITS
+// internal header, only needed for the stage breakdown
+#include "../src/p528/ProfileContext.h"
 
 using namespace ITS::ITU::PSeries::p528;
 
@@ -206,6 +197,11 @@ void PrintStageBreakdown(const Scenario& s, int repeat) {
   volatile double sink = 0;
   time_fast("LOS: FindPsiAtDistance", [&](int i) {
     sink = FindPsiAtDistance(d_ML__km * (0.2 + 0.6 * i / fast_repeat), &t1, &t2);
+  });
+  PsiSearchTree psi_search;
+  time_fast("LOS: FindPsiAtDistance (profile)", [&](int i) {
+    sink = FindPsiAtDistance(d_ML__km * (0.2 + 0.6 * i / fast_repeat), &t1, &t2,
+                             &psi_search);
   });
   time_fast("LOS: ray through shared layers", [&](int i) {
     RayTrace(t1.h_r__km, PI / 2 - 0.001 - 0.2 * i / fast_repeat, layers,

@@ -76,6 +76,41 @@ void RayOptics(Terminal* terminal_1, Terminal* terminal_2, double psi,
   params->theta_h2__rad = -(alpha + params->theta[1]);  // [Eqn 7-17]
 }
 
+/**
+ * Computes the path distance of the line-of-sight ray optics only: d__km of
+ * RayOptics(), bit for bit, without the other parameters. The search for the
+ * reflection angle of a distance evaluates nothing else, and this takes a
+ * third of the trigonometric functions.
+ *
+ * @param[in]  terminal_1  Structure holding low terminal parameters
+ * @param[in]  terminal_2  Structure holding high terminal parameters
+ * @param[in]  psi         Reflection angle, in radians
+ * @return                 Path distance between terminals, in km
+ ******************************************************************************/
+double RayOpticsDistance(Terminal* terminal_1, Terminal* terminal_2,
+                         double psi) {
+  double z = (a_0__km / a_e__km) - 1;   // [Eqn 7-1]
+  double k_a = 1 / (1 + z * cos(psi));  // [Eqn 7-2]
+  double a_a__km = a_0__km * k_a;       // [Eqn 7-3]
+
+  double delta_h_a1__km = terminal_1->delta_h__km * (a_a__km - a_0__km) /
+                          (a_e__km - a_0__km);  // [Eqn 7-4]
+  double delta_h_a2__km = terminal_2->delta_h__km * (a_a__km - a_0__km) /
+                          (a_e__km - a_0__km);  // [Eqn 7-4]
+
+  double H__km[2] = {0};
+  H__km[0] = terminal_1->h_r__km - delta_h_a1__km;  // [Eqn 7-5]
+  H__km[1] = terminal_2->h_r__km - delta_h_a2__km;  // [Eqn 7-5]
+
+  double theta[2] = {0};
+  for (int i = 0; i < 2; i++) {
+    double z__km = a_a__km + H__km[i];                    // [Eqn 7-6]
+    theta[i] = acos(a_a__km * cos(psi) / z__km) - psi;    // [Eqn 7-7]
+  }
+
+  return MAX(a_a__km * (theta[0] + theta[1]), 0);  // [Eqn 7-11]
+}
+
 }  // namespace p528
 }  // namespace PSeries
 }  // namespace ITU

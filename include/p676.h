@@ -91,9 +91,9 @@ private:
 class SurfaceRayTable
 {
 public:
-    static const int NODES = 8;             // Interpolation nodes in the layer scale m
-    static const int CHECKS = 2;            // Additional rays that verify the interpolation
-    static const int LAST_LAYERS = 921;     // Layers up to the top of the reference atmosphere
+    static constexpr int NODES = 8;         // Interpolation nodes in the layer scale m
+    static constexpr int CHECKS = 2;        // Additional rays that verify the interpolation
+    static constexpr int LAST_LAYERS = 921; // Layers up to the top of the reference atmosphere
 
     explicit SurfaceRayTable(SpecificAttenuationTable* table);
     SurfaceRayTable(const SurfaceRayTable&) = delete;
@@ -124,7 +124,7 @@ private:
 class LayerRayTable
 {
 public:
-    static const int DEGREE = 16;           // Degree of the interpolation per segment
+    static constexpr int DEGREE = 16;       // Degree of the interpolation per segment
 
     LayerRayTable(double h_1__km, const RayTraceLayers* layers);
     LayerRayTable(const LayerRayTable&) = delete;

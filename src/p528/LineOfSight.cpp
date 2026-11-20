@@ -52,6 +52,82 @@ double FindPsiAtDistance(double d__km, Terminal* terminal_1,
 }
 
 /**
+ * Determine reflection angle for line of sight distance (d__km), for the
+ * distances of a profile. The search takes exactly the steps of
+ * FindPsiAtDistance() and returns the same angle. But it only computes the
+ * distance of each angle it tries, and it remembers the angles that the
+ * distances of a profile have in common.
+ *
+ * @param[in] d__km       %Path distance of interest.
+ * @param[in] terminal_1  Struct containing low terminal parameters
+ * @param[in] terminal_2  Struct containing high terminal parameters
+ * @param[in,out] tree    Angles tried so far, for these two terminals
+ * @return                Ray reflection angle, in radians
+ ******************************************************************************/
+double FindPsiAtDistance(double d__km, Terminal* terminal_1,
+                         Terminal* terminal_2, PsiSearchTree* tree) {
+  if (d__km == 0) return PI / 2;
+
+  // initialize to start at mid-point
+  double psi = PI / 2;
+  double delta_psi = -PI / 4;
+
+  double d_psi__km;
+
+  int depth = 0;
+  int i_node = -1;      // node of psi
+  int side = 0;         // child of that node the search turns to
+  bool stored = true;   // false once the search is below the stored levels
+
+  do {
+    psi += delta_psi;  // new psi
+    depth++;
+
+    if (stored) {
+      int i_next;
+      if (depth == 1)
+        i_next = tree->nodes.empty() ? -1 : 0;
+      else
+        i_next = tree->nodes[i_node].child[side];
+
+      if (i_next >= 0) {
+        d_psi__km = tree->nodes[i_next].d__km;
+      } else {
+        d_psi__km = RayOpticsDistance(terminal_1, terminal_2, psi);
+
+        if (depth <= PsiSearchTree::MAX_DEPTH &&
+            tree->nodes.size() < PsiSearchTree::MAX_NODES) {
+          PsiSearchTree::Node node;
+          node.d__km = d_psi__km;
+          tree->nodes.push_back(node);
+          i_next = (int)tree->nodes.size() - 1;
+          if (depth > 1) tree->nodes[i_node].child[side] = i_next;
+        } else {
+          stored = false;
+        }
+      }
+      i_node = i_next;
+    } else {
+      d_psi__km = RayOpticsDistance(terminal_1, terminal_2, psi);
+    }
+
+    // compute delta
+    if (d_psi__km > d__km) {
+      delta_psi = abs(delta_psi) / 2;
+      side = 0;
+    } else {
+      delta_psi = -abs(delta_psi) / 2;
+      side = 1;
+    }
+
+  } while (
+      abs(d__km - d_psi__km) > 1e-3 &&
+      (abs(delta_psi) > 1e-12));  // get within 1 meter of desired delta_r value
+
+  return psi;
+}
+
+/**
  * Determine the psi_limit, where you switch from free space to 2-ray model.
  * This is the reflecting angle corresponding to the distance at which
  * delta_r__km = lambda__km / 2
@@ -302,7 +378,11 @@ void LineOfSightPoint(Path* path, Terminal* terminal_1, Terminal* terminal_2,
   double lambda__km = 0.2997925 / f__mhz;  // [Eqn 6-1]
 
   // tune psi for the desired distance
-  psi = FindPsiAtDistance(d__km, terminal_1, terminal_2);
+  if (gamma_table)
+    psi = FindPsiAtDistance(d__km, terminal_1, terminal_2,
+                            &shared->psi_search);
+  else
+    psi = FindPsiAtDistance(d__km, terminal_1, terminal_2);
 
   RayOptics(terminal_1, terminal_2, psi, los_params);
 

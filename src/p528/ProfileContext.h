@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "p528.h"
 #include "p676.h"
@@ -13,6 +14,24 @@ namespace ITS {
 namespace ITU {
 namespace PSeries {
 namespace p528 {
+
+/**
+ * The reflection angles FindPsiAtDistance() has tried, with their distances.
+ *
+ * The search halves an interval of angles, so the angles it tries form a
+ * binary tree that is the same for every distance. Distances that are close
+ * to each other share all but the last steps. The tree stores the upper
+ * levels, the lower ones would rarely be reused.
+ */
+struct PsiSearchTree {
+  struct Node {
+    double d__km;                ///< Path distance of the angle of this node
+    int child[2] = {-1, -1};     ///< Next angle above and below, -1 if not stored
+  };
+  static constexpr int MAX_DEPTH = 20;     ///< Levels that are stored
+  static constexpr size_t MAX_NODES = 1 << 18;  ///< Limits the memory to 4 MB
+  std::vector<Node> nodes;                 ///< The first node is the root
+};
 
 /**
  * State of the line-of-sight region that all distances share. It is filled on
@@ -25,6 +44,8 @@ struct LineOfSightShared {
   std::unique_ptr<LayerRayTable> rays;
   /** Downward-looking rays between the two terminals (profiles only) */
   std::unique_ptr<GrazingRayCache> grazing_rays;
+  /** Reflection angles tried so far (profiles only) */
+  PsiSearchTree psi_search;
 };
 
 /**
@@ -93,6 +114,14 @@ void InitializeProfileContext(double h_1__meter, double h_2__meter,
 void EvaluateProfilePoint(ProfileContext* context, double d__km,
                           Result* result, TroposcatterParams* tropo,
                           LineOfSightParams* los_params);
+
+double RayOpticsDistance(Terminal* terminal_1, Terminal* terminal_2,
+                         double psi);
+
+double FindPsiAtDistance(double d__km, Terminal* terminal_1,
+                         Terminal* terminal_2);
+double FindPsiAtDistance(double d__km, Terminal* terminal_1,
+                         Terminal* terminal_2, PsiSearchTree* tree);
 
 void LineOfSightSetup(Path* path, Terminal* terminal_1, Terminal* terminal_2,
                       double f__mhz, double A_dML__db, int T_pol,
