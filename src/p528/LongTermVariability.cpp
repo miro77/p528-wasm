@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "p528.h"
+#include "ProfileContext.h"
 
 namespace ITS {
 namespace ITU {
@@ -33,6 +34,25 @@ namespace p528 {
 void LongTermVariability(double d_r1__km, double d_r2__km, double d__km,
                          double f__mhz, double p, double f_theta_h, double A_T,
                          double* Y_e__db, double* A_Y) {
+  LongTermVariabilityTerms terms;
+  GetLongTermVariabilityTerms(d_r1__km, d_r2__km, d__km, f__mhz, &terms);
+  LongTermVariability(terms, p, f_theta_h, A_T, Y_e__db, A_Y);
+}
+
+/**
+ * First part of LongTermVariability(): the terms that do not depend on the
+ * time percentage. P.528 needs the variability of every distance for two
+ * percentages (p and 50), which can share these terms.
+ *
+ * @param[in] d_r1__km  Actual height of low terminal, in km
+ * @param[in] d_r2__km  Actual height of high terminal, in km
+ * @param[in] d__km     Great circle path distance, in km
+ * @param[in] f__mhz    Frequency, in MHz
+ * @param[out] terms    Terms for LongTermVariability()
+ ******************************************************************************/
+void GetLongTermVariabilityTerms(double d_r1__km, double d_r2__km,
+                                 double d__km, double f__mhz,
+                                 LongTermVariabilityTerms* terms) {
   double d_qs__km = 65.0 * pow((100.0 / f__mhz), THIRD);  // [Eqn 14-1]
   double d_Lq__km = d_r1__km + d_r2__km;                  // [Eqn 14-2]
   double d_q__km = d_Lq__km + d_qs__km;                   // [Eqn 14-3]
@@ -70,7 +90,7 @@ void LongTermVariability(double d_r1__km, double d_r2__km, double d__km,
   double f_inf[] = {3.2, 5.4, 0.0};
   double f_m[] = {8.2, 10.0, 3.9};
 
-  double Z__db[3];  // = [Y_0(90) Y_0(10) V(50)]
+  double* Z__db = terms->Z__db;  // = [Y_0(90) Y_0(10) V(50)]
   for (int i = 0; i < 3; i++) {
     double f_2 =
         f_inf[i] + ((f_m[i] - f_inf[i]) * exp(-c_2[i] * pow(d_e__km, n_2[i])));
@@ -79,6 +99,29 @@ void LongTermVariability(double d_r1__km, double d_r2__km, double d__km,
                    exp(-c_3[i] * pow(d_e__km, n_3[i])) +
                f_2;
   }
+
+  terms->g_10 = g_10;
+  terms->g_90 = g_90;
+}
+
+/**
+ * Second part of LongTermVariability(): the variability for a time
+ * percentage.
+ *
+ * @param[in] terms     Result of GetLongTermVariabilityTerms()
+ * @param[in] p         Time percentage
+ * @param[in] f_theta_h Constant/parameter used for path loss calculation.
+ *                      Determined earlier in the algorithm.
+ * @param[in] A_T       Predicted loss
+ * @param[out] Y_e__db  Variability, in dB
+ * @param[out] A_Y      Conditional adjustment factor, in dB
+ ******************************************************************************/
+void LongTermVariability(const LongTermVariabilityTerms& terms, double p,
+                         double f_theta_h, double A_T, double* Y_e__db,
+                         double* A_Y) {
+  const double* Z__db = terms.Z__db;
+  const double g_10 = terms.g_10;
+  const double g_90 = terms.g_90;
 
   double Y_p__db;
   if (p == 50)

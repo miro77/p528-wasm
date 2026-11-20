@@ -474,10 +474,13 @@ void LineOfSightPoint(Path* path, Terminal* terminal_1, Terminal* terminal_2,
         0);
 
   double Y_e__db, Y_e_50__db, A_Y;
-  LongTermVariability(terminal_1->d_r__km, terminal_2->d_r__km, d__km, f__mhz,
-                      p, f_theta_h, los_params->A_LOS__db, &Y_e__db, &A_Y);
-  LongTermVariability(terminal_1->d_r__km, terminal_2->d_r__km, d__km, f__mhz,
-                      50, f_theta_h, los_params->A_LOS__db, &Y_e_50__db, &A_Y);
+  LongTermVariabilityTerms terms;
+  GetLongTermVariabilityTerms(terminal_1->d_r__km, terminal_2->d_r__km, d__km,
+                              f__mhz, &terms);
+  LongTermVariability(terms, p, f_theta_h, los_params->A_LOS__db, &Y_e__db,
+                      &A_Y);
+  LongTermVariability(terms, 50, f_theta_h, los_params->A_LOS__db, &Y_e_50__db,
+                      &A_Y);
 
   // [Eqn 13-2]
   double F_AY;

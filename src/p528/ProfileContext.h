@@ -119,6 +119,20 @@ void EvaluateProfilePoint(ProfileContext* context, double d__km,
 void TerminalGeometry(double f__mhz, Terminal* terminal,
                       SpecificAttenuationTable* table);
 
+/** Terms of the long-term variability that all time percentages share */
+struct LongTermVariabilityTerms {
+  double Z__db[3];  ///< Y_0(90), Y_0(10) and V(50)
+  double g_10;      ///< Frequency factor for percentages below 50, [Eqn 14-5]
+  double g_90;      ///< Frequency factor for percentages above 50, [Eqn 14-6]
+};
+
+void GetLongTermVariabilityTerms(double d_r1__km, double d_r2__km,
+                                 double d__km, double f__mhz,
+                                 LongTermVariabilityTerms* terms);
+void LongTermVariability(const LongTermVariabilityTerms& terms, double p,
+                         double f_theta_h, double A_T, double* Y_e__db,
+                         double* A_Y);
+
 double RayOpticsDistance(Terminal* terminal_1, Terminal* terminal_2,
                          double psi);
 
